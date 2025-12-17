@@ -1,0 +1,29 @@
+{
+    "title": "Service details",
+    "intro": "Extended information about the Landing Page scope.",
+    "sections": [
+      {
+        "title": "What’s included",
+        "items": [
+          "Responsive visual design (mobile-first).",
+          "Accessible implementation with basic on-page SEO.",
+          "1 contact form with validations.",
+          "Up to 3 custom content sections.",
+          "Initial performance optimization (images & fonts)."
+        ]
+      },
+      {
+        "title": "Deliverables",
+        "items": [
+          "Versioned source code.",
+          "Deployed implementation on managed hosting.",
+          "Short guide for content updates."
+        ]
+      }
+    ],
+    "footnotes": [
+      "Timeline and cost may vary with scope changes.",
+      "External integrations or advanced animations are quoted separately."
+    ]
+  }
+  

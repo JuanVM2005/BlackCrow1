@@ -1,0 +1,28 @@
+{
+    "title": "Detalles del servicio",
+    "intro": "Proyecto a medida según objetivos y restricciones técnicas.",
+    "sections": [
+      {
+        "title": "Proceso",
+        "items": [
+          "Discovery y definición de requerimientos.",
+          "Arquitectura técnica y plan de iteraciones.",
+          "Diseño de interacción y micro-animaciones.",
+          "Integraciones con APIs/servicios externos."
+        ]
+      },
+      {
+        "title": "Entregables",
+        "items": [
+          "Código y documentación técnica.",
+          "Paneles de observabilidad básicos (logs, métricas).",
+          "Plan de despliegue y checklist de QA."
+        ]
+      }
+    ],
+    "footnotes": [
+      "El alcance final se define en la propuesta y se gestiona por hitos.",
+      "Cambios mayores en alcance impactan cronograma y presupuesto."
+    ]
+  }
+  

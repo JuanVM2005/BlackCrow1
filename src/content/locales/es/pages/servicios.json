@@ -1,0 +1,37 @@
+{
+    "header": {
+      "title": "Servicios",
+      "subtitle": "Webs de alto impacto para crecer tu marca: diseño, performance y claridad en entregables."
+    },
+    "items": [
+      {
+        "key": "landing",
+        "title": "Landing Page",
+        "summary": "Página única orientada a conversión. Ideal para campañas, MVPs o lanzamientos.",
+        "cta": { "label": "Ver detalles" }
+      },
+      {
+        "key": "website",
+        "title": "Website",
+        "summary": "Sitio multipágina para marcas y negocios. Secciones esenciales, performance y SEO base.",
+        "cta": { "label": "Ver detalles" }
+      },
+      {
+        "key": "ecommerce",
+        "title": "E-Commerce",
+        "summary": "Tienda online con catálogo, carrito y checkout. Integraciones de pago y envíos.",
+        "cta": { "label": "Ver detalles" }
+      },
+      {
+        "key": "custom",
+        "title": "Personalizado",
+        "summary": "Proyecto a medida: portales, integraciones o funcionalidades específicas.",
+        "cta": { "label": "Hablar con un especialista" }
+      }
+    ],
+    "seo": {
+      "title": "Servicios — Black Crow",
+      "description": "Landing, Website y E-Commerce con precios claros, entregables y tiempos definidos."
+    }
+  }
+  

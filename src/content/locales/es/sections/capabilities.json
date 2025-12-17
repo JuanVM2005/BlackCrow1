@@ -1,0 +1,25 @@
+{
+    "kind": "capabilities",
+    "header": {
+      "headline": "Impulsamos Marcas que Destaquen",
+      "aside": "Creemos que las marcas no solo deben aparecer—deben entrar con presencia."
+    },
+    "items": [
+      {
+        "title": "Logo & Branding",
+        "description": "Más que un logo—es la cara, la voz y la personalidad de tu marca."
+      },
+      {
+        "title": "Web Design",
+        "description": "Sitios que no solo existen—enganchan, inspiran y elevan."
+      },
+      {
+        "title": "Development",
+        "description": "Código limpio y rápido, donde cada pixel y feature cuenta."
+      },
+      {
+        "title": "SEO & Performance",
+        "description": "Velocidad, indexación y mediciones para crecer con datos—no con supuestos."
+      }
+    ]
+  }

@@ -1,0 +1,29 @@
+{
+    "title": "Detalles del servicio",
+    "intro": "Alcance y consideraciones del Website corporativo.",
+    "sections": [
+      {
+        "title": "Qué incluye",
+        "items": [
+          "Arquitectura de información y mapa de navegación.",
+          "Páginas base: Inicio, Servicios, Nosotros, Contacto.",
+          "SEO técnico básico y metadatos por página.",
+          "Integración con analítica y etiquetas esenciales.",
+          "Performance orientada a Core Web Vitals."
+        ]
+      },
+      {
+        "title": "Entregables",
+        "items": [
+          "Diseño e implementación responsiva.",
+          "Guía de contenidos y estilos de texto.",
+          "Capacitación breve para el equipo."
+        ]
+      }
+    ],
+    "footnotes": [
+      "Secciones adicionales y blog/CMS se cotizan por separado.",
+      "Integraciones específicas (chat, CRM, etc.) requieren validación."
+    ]
+  }
+  

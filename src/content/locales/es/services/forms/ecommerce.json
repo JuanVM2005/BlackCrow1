@@ -1,0 +1,53 @@
+{
+  "title": "Solicita tu Ecommerce",
+  "cta": { "label": "Enviar" },
+  "fields": [
+    {
+      "id": "firstName",
+      "label": "Nombre",
+      "placeholder": "Tu nombre",
+      "type": "text",
+      "required": true,
+      "width": "half"
+    },
+    {
+      "id": "lastName",
+      "label": "Apellido",
+      "placeholder": "Tu apellido",
+      "type": "text",
+      "required": true,
+      "width": "half"
+    },
+    {
+      "id": "email",
+      "label": "Correo electrónico",
+      "placeholder": "tu@correo.com",
+      "type": "email",
+      "required": true,
+      "width": "full"
+    },
+    {
+      "id": "message",
+      "label": "Mensaje",
+      "placeholder": "Cuéntanos sobre tu tienda…",
+      "type": "textarea",
+      "rows": 6,
+      "required": true,
+      "width": "full"
+    },
+    {
+      "id": "newsletter",
+      "label": "Recibir boletín mensual de Black Crow",
+      "type": "checkbox",
+      "required": false,
+      "width": "full"
+    },
+    {
+      "id": "acceptPrivacy",
+      "label": "Acepto la política de privacidad.",
+      "type": "checkbox",
+      "required": true,
+      "width": "full"
+    }
+  ]
+}

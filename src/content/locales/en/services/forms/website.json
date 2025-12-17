@@ -1,0 +1,53 @@
+{
+  "title": "Request Your Website",
+  "cta": { "label": "Send" },
+  "fields": [
+    {
+      "id": "firstName",
+      "label": "First name",
+      "placeholder": "Your name",
+      "type": "text",
+      "required": true,
+      "width": "half"
+    },
+    {
+      "id": "lastName",
+      "label": "Last name",
+      "placeholder": "Your last name",
+      "type": "text",
+      "required": true,
+      "width": "half"
+    },
+    {
+      "id": "email",
+      "label": "Email",
+      "placeholder": "you@email.com",
+      "type": "email",
+      "required": true,
+      "width": "full"
+    },
+    {
+      "id": "message",
+      "label": "Message",
+      "placeholder": "Describe your project…",
+      "type": "textarea",
+      "rows": 6,
+      "required": true,
+      "width": "full"
+    },
+    {
+      "id": "newsletter",
+      "label": "Subscribe to Black Crow monthly newsletter",
+      "type": "checkbox",
+      "required": false,
+      "width": "full"
+    },
+    {
+      "id": "acceptPrivacy",
+      "label": "I accept the privacy policy.",
+      "type": "checkbox",
+      "required": true,
+      "width": "full"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "ariaLabel": "Sitio — pie de página",
+  "brand": {
+    "name": "Black Crow",
+    "logo": "/logos/brand-mark.svg",
+    "tagline": "Web que conecta"
+  },
+  "divider": true,
+  "columns": [
+    {
+      "title": "Menu",
+      "items": [
+        { "label": "Home", "href": "/" },
+        { "label": "Precios", "href": "/#precios" },
+        { "label": "Contacto", "href": "/#contacto" }
+      ]
+    },
+    {
+      "title": "Social",
+      "items": [
+        { "label": "Instagram", "href": "https://instagram.com/blackcrow.agency" },
+        { "label": "LinkedIn", "href": "https://www.linkedin.com/company/black-crow" },
+        { "label": "Behance", "href": "https://www.behance.net/blackcrow" }
+      ]
+    },
+    {
+      "title": "Business enquiries",
+      "items": [
+        { "label": "hello@blackcrow.agency", "href": "mailto:hello@blackcrow.agency" }
+      ]
+    }
+  ]
+}

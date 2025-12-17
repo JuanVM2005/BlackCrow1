@@ -1,0 +1,30 @@
+
+{
+  "title": "FAQ’s",
+  "items": [
+    {
+      "question": "¿Cuánto suele costar el diseño y desarrollo web?",
+      "answer": "La mayoría de nuestros proyectos se sitúan entre S/500 y S/1800, pero los costos dependen del alcance final del trabajo. Preferimos acordar un costo fijo con entregas por hitos."
+    },
+    {
+      "question": "¿Cuánto tiempo suele durar un proyecto?",
+      "answer": "Generalmente duran entre 2 y 6 semanas dependiendo de su complejidad y nivel de personalización."
+    },
+    {
+      "question": "¿Cómo manejas las revisiones y los comentarios durante el proceso de diseño?",
+      "answer": "Utilizamos Figma y otros entornos colaborativos para recibir comentarios y revisar en tiempo real."
+    },
+    {
+      "question": "¿Puede tu agencia creativa adaptarse a plazos ajustados?",
+      "answer": "Sí, en muchos casos podemos adaptarnos. Sin embargo, la calidad siempre tiene prioridad sobre la velocidad."
+    },
+    {
+      "question": "¿Qué soporte ofrecen después del lanzamiento?",
+      "answer": "Incluimos soporte técnico y mantenimiento por defecto en todos nuestros planes. También ofrecemos planes ampliados si lo necesitas."
+    },
+    {
+      "question": "¿Los servicios de marketing digital tienen un coste adicional?",
+      "answer": "Sí, se presupuestan aparte dependiendo de tus objetivos y alcance mensual."
+    }
+  ]
+}

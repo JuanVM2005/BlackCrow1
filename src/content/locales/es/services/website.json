@@ -1,0 +1,25 @@
+{
+  "kind": "service",
+  "key": "website",
+  "header": {
+    "badge": "Servicio",
+    "title": "Website",
+    "subtitle": "Un sitio corporativo claro, rápido y escalable que crece con tu marca."
+  },
+  "priceRange": "S/. 1,800 – S/. 3,500",
+  "featuresLeft": [
+    "Arquitectura de información y UX",
+    "Páginas esenciales (Inicio, Servicios, Nosotros, Contacto)",
+    "Diseño adaptativo y accesible"
+  ],
+  "featuresRight": [
+    "Integración con analítica y SEO técnico básico",
+    "Performance cuidada (Core Web Vitals)",
+    "Soporte y guía de contenidos inicial"
+  ],
+  "tags": ["Website", "Escalable", "SEO", "Accesible"],
+  "seo": {
+    "title": "Website corporativo — Diseño y desarrollo web profesional",
+    "description": "Sitios web escalables con UX clara, SEO técnico básico y performance de alto nivel para crecer con tu marca."
+  }
+}

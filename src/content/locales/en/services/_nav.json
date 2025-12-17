@@ -1,0 +1,6 @@
+[
+  { "label": "Landing Page", "slug": "landing",       "order": 1 },
+  { "label": "Website",      "slug": "website",       "order": 2 },
+  { "label": "E-commerce",   "slug": "ecommerce",     "order": 3 },
+  { "label": "Custom",       "slug": "custom", "order": 4 }
+]

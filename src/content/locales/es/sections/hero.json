@@ -1,0 +1,19 @@
+{
+  "kind": "hero",
+  "data": {
+    "kicker": "AGENCIA CREATIVA & TECH",
+    "headline": "Vuela Sin Límites",
+    "tagline": "UX/UI – Branding – Desarrollo Web",
+    "media": {
+      "kind": "model",
+      "src": "/models/crow.glb",
+      "poster": "/images/landing/hero-desktop.webp",
+      "alt": "Render 3D de un cuervo negro, símbolo de Black Crow"
+    },
+    "decorativeLines": {
+      "enabled": true,
+      "positions": ["top-right", "bottom-right"]
+    },
+    "align": "start"
+  }
+}

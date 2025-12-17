@@ -1,0 +1,25 @@
+{
+    "kind": "capabilities",
+    "header": {
+      "headline": "We Propel Brands that Stand Out",
+      "aside": "We believe brands shouldn’t just show up—they should arrive with presence."
+    },
+    "items": [
+      {
+        "title": "Logo & Branding",
+        "description": "More than a logo—it’s your brand’s face, voice, and personality."
+      },
+      {
+        "title": "Web Design",
+        "description": "Websites that don’t just exist—they engage, inspire, and elevate."
+      },
+      {
+        "title": "Development",
+        "description": "Clean, fast code where every pixel and feature counts."
+      },
+      {
+        "title": "SEO & Performance",
+        "description": "Speed, indexing, and metrics to grow with data—not assumptions."
+      }
+    ]
+  }

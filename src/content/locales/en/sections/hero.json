@@ -1,0 +1,15 @@
+{
+  "kind": "hero",
+  "data": {
+    "kicker": "CREATIVE & TECH AGENCY",
+    "headline": "Limits",
+    "tagline": "UX/UI – Branding – Web Development",
+    "media": {
+      "kind": "model",
+      "src": "/models/crow.glb",
+      "poster": "/images/landing/hero-desktop.webp",
+      "alt": "3D render of a black crow, Black Crow’s symbol"
+    },
+    "align": "start"
+  }
+}

@@ -1,0 +1,30 @@
+
+{
+  "title": "FAQs",
+  "items": [
+    {
+      "question": "How much does web design and development usually cost?",
+      "answer": "Most projects fall between S/500 and S/1800, but the final cost depends on scope. We prefer a fixed price with milestone-based deliveries."
+    },
+    {
+      "question": "How long does a project usually take?",
+      "answer": "Typically between 2 and 6 weeks, depending on complexity and level of customization."
+    },
+    {
+      "question": "How do you handle revisions and feedback during the design process?",
+      "answer": "We use Figma and other collaborative environments to gather feedback and review in real time."
+    },
+    {
+      "question": "Can your creative agency accommodate tight deadlines?",
+      "answer": "Yes, in many cases we can. However, quality always takes priority over speed."
+    },
+    {
+      "question": "What support do you offer after launch?",
+      "answer": "We include technical support and maintenance by default in all our plans. We also offer extended plans if needed."
+    },
+    {
+      "question": "Do digital marketing services have an additional cost?",
+      "answer": "Yes, they are quoted separately depending on your goals and monthly scope."
+    }
+  ]
+}

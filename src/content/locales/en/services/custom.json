@@ -1,0 +1,25 @@
+{
+  "kind": "service",
+  "key": "custom",
+  "header": {
+    "badge": "Service",
+    "title": "Custom",
+    "subtitle": "Tailored solutions for specific needs and high impact."
+  },
+  "priceRange": "From S/. 5,000",
+  "featuresLeft": [
+    "Discovery and scope definition",
+    "Integrations with APIs/external services",
+    "Interaction design & micro-animations"
+  ],
+  "featuresRight": [
+    "Scalable and maintainable architecture",
+    "Basic observability (logs, metrics)",
+    "Milestone-based delivery with QA"
+  ],
+  "tags": ["Custom", "Integrations", "APIs", "Scalable"],
+  "seo": {
+    "title": "Custom Project — Tailored development",
+    "description": "Bespoke design and development with integrations, performance and scalability, guided by a clear milestone-based process."
+  }
+}

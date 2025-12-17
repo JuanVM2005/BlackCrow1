@@ -1,0 +1,37 @@
+{
+    "header": {
+      "title": "Services",
+      "subtitle": "High-impact websites to grow your brand: design, performance, and clear deliverables."
+    },
+    "items": [
+      {
+        "key": "landing",
+        "title": "Landing Page",
+        "summary": "Single-page built for conversion. Ideal for campaigns, MVPs, or launches.",
+        "cta": { "label": "View details" }
+      },
+      {
+        "key": "website",
+        "title": "Website",
+        "summary": "Multi-page site for brands and businesses. Essential sections, performance, and baseline SEO.",
+        "cta": { "label": "View details" }
+      },
+      {
+        "key": "ecommerce",
+        "title": "E-Commerce",
+        "summary": "Online store with catalog, cart, and checkout. Payment and shipping integrations.",
+        "cta": { "label": "View details" }
+      },
+      {
+        "key": "custom",
+        "title": "Custom Project",
+        "summary": "Tailor-made solution: portals, integrations, or specific capabilities.",
+        "cta": { "label": "Talk to a specialist" }
+      }
+    ],
+    "seo": {
+      "title": "Services — Black Crow",
+      "description": "Landing, Website, and E-Commerce with clear pricing, deliverables, and timelines."
+    }
+  }
+  

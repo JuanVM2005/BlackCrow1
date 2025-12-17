@@ -1,0 +1,25 @@
+{
+  "kind": "service",
+  "key": "landing",
+  "header": {
+    "badge": "Service",
+    "title": "Launch",
+    "subtitle": "Kickstart your digital presence with a modern, fast, conversion-focused landing page."
+  },
+  "priceRange": "S/. 600 – S/. 900",
+  "featuresLeft": [
+    "Modern, optimized landing page",
+    "Responsive design (mobile-first)",
+    "Built-in forms to capture leads"
+  ],
+  "featuresRight": [
+    "Up to 3 custom sections",
+    "Domain + hosting included for 1 year",
+    "Fast load and basic on-page SEO"
+  ],
+  "tags": ["Launch", "Landing Page", "Fast", "Affordable"],
+  "seo": {
+    "title": "Landing Page Service — Conversion-focused design & build",
+    "description": "Modern landing page with solid performance, basic SEO and integrated forms. Ideal to validate offers and launch campaigns fast."
+  }
+}

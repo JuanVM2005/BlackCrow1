@@ -1,0 +1,97 @@
+{
+  "kind": "page",
+  "slug": "home",
+  "meta": {
+    "title": "Black Crow — Agencia Creativa & Tech",
+    "description": "Diseño UX/UI, branding y desarrollo web de alto impacto.",
+    "ogImage": "/og/home-es.png"
+  },
+  "announcement": {
+    "enabled": false,
+    "text": "",
+    "href": ""
+  },
+  "header": {
+    "brand": { "label": "Black Crow", "href": "/es" },
+    "nav": [
+      { "label": "Home", "href": "/es" },
+      { "label": "Precios", "href": "/es" },
+      { "label": "Contacto", "href": "/es/servicios/personalizado" }
+    ],
+    "cta": {
+      "label": "Empieza tu proyecto",
+      "href": "/es/servicios/personalizado",
+      "variant": "primary"
+    }
+  },
+  "sections": [
+    {
+      "kind": "hero",
+      "data": {
+        "kicker": "AGENCIA CREATIVA & TECH",
+        "headline": "Vuela Sin Límites",
+        "tagline": "UX/UI – Branding – Desarrollo Web",
+        "media": {
+          "kind": "model",
+          "src": "/models/crow.glb",
+          "poster": "/images/landing/hero-desktop.webp",
+          "alt": "Render 3D de un cuervo negro, símbolo de Black Crow"
+        },
+        "decorativeLines": {
+          "enabled": true,
+          "positions": ["top-right", "bottom-right"]
+        },
+        "align": "start"
+      }
+    },
+    {
+      "kind": "studioIntro",
+      "data": {
+        "kicker": "El estudio",
+        "title": "El estudio",
+        "body": "En Black Crow combinamos diseño, código y narrativa para crear interfaces y experiencias que dejan huella. Nos mueve la interacción como valor tangible para marcas y personas.",
+        "cta": { "label": "Aprende más", "href": "/es" }
+      }
+    },
+    { "kind": "wordmarkOffset" },
+    { "kind": "capabilities" },
+    {
+      "kind": "bigStatement",
+      "data": {
+        "left": { "lines": ["Diseño.", "Código.", "Impacto real."] },
+        "right": {
+          "kicker": "Manifiesto",
+          "headline": "Creamos interfaces que mueven a la acción",
+          "copy": "Productos web con foco en performance, accesibilidad y detalle. Desde estrategia hasta ejecución, cuidamos cada píxel."
+        },
+        "layout": { "container": "xl", "reverse": false, "bleedY": true }
+      }
+    },
+    { "kind": "interactive-3d" },
+    { "kind": "value-grid" },
+    { "kind": "stack-grid" },
+    { "kind": "message-bar" },
+    { "kind": "pricing" },
+    {
+      "kind": "cta-minimal",
+      "data": {
+        "title": "¿Listo para algo personalizado?",
+        "action": { "label": "Habla con nosotros", "href": "/es/servicios/personalizado" },
+        "align": "center"
+      }
+    },
+    { "kind": "faq" }
+  ],
+  "footer": {
+    "legal": [
+      { "label": "Privacidad", "href": "/es/legal/privacidad" },
+      { "label": "Términos", "href": "/es/legal/terminos" }
+    ],
+    "social": [],
+    "note": ""
+  },
+  "messages": {
+    "betaNote": "",
+    "maintenance": ""
+  }
+}

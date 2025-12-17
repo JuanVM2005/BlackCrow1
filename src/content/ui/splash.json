@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "minDurationMs": 3500,
+  "oncePerSession": false,
+  "label": "Black Crow Splash",
+  "brand": {
+    "top": "BLACK",
+    "bottom": "CROW",
+    "logoSrc": "/logos/BlackCrow/LogoBlackCrowWhite.svg"
+  },
+  "tagline": "Creative & Tech Studio",
+  "srOnly": "Black Crow — loading",
+  "audio": {
+    "enabled": true,
+    "src": "/sounds/shine.mp3",
+    "volume": 1.8
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "kind": "cta-minimal",
+    "data": {
+      "title": "¿Listo para algo personalizado?",
+      "action": { "label": "Habla con nosotros", "href": "/es/servicios/personalizado" },
+      "align": "center"
+    }
+  }
+  

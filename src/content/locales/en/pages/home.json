@@ -1,0 +1,97 @@
+{
+  "kind": "page",
+  "slug": "home",
+  "meta": {
+    "title": "Black Crow — Creative & Tech Agency",
+    "description": "High-impact UX/UI design, branding, and web development.",
+    "ogImage": "/og/home-en.png"
+  },
+  "announcement": {
+    "enabled": false,
+    "text": "",
+    "href": ""
+  },
+  "header": {
+    "brand": { "label": "Black Crow", "href": "/en" },
+    "nav": [
+      { "label": "Home", "href": "/en" },
+      { "label": "Pricing", "href": "/en" },
+      { "label": "Contact", "href": "/en/services/custom" }
+    ],
+    "cta": {
+      "label": "Start your project",
+      "href": "/en/services/custom",
+      "variant": "primary"
+    }
+  },
+  "sections": [
+    {
+      "kind": "hero",
+      "data": {
+        "kicker": "CREATIVE & TECH AGENCY",
+        "headline": "Fly Without Limits",
+        "tagline": "UX/UI – Branding – Web Development",
+        "media": {
+          "kind": "model",
+          "src": "/models/crow.glb",
+          "poster": "/images/landing/hero-desktop.webp",
+          "alt": "3D render of a black crow, Black Crow symbol"
+        },
+        "decorativeLines": {
+          "enabled": true,
+          "positions": ["top-right", "bottom-right"]
+        },
+        "align": "start"
+      }
+    },
+    {
+      "kind": "studioIntro",
+      "data": {
+        "kicker": "The studio",
+        "title": "The studio",
+        "body": "At Black Crow, we blend design, code, and narrative to create interfaces and experiences that leave a mark. We are driven by interaction as tangible value for brands and people.",
+        "cta": { "label": "Learn more", "href": "/en" }
+      }
+    },
+    { "kind": "wordmarkOffset" },
+    { "kind": "capabilities" },
+    {
+      "kind": "bigStatement",
+      "data": {
+        "left": { "lines": ["Design.", "Code.", "Real impact."] },
+        "right": {
+          "kicker": "Manifesto",
+          "headline": "We craft interfaces that drive action",
+          "copy": "Web products focused on performance, accessibility, and detail. From strategy to execution, we polish every pixel."
+        },
+        "layout": { "container": "xl", "reverse": false, "bleedY": true }
+      }
+    },
+    { "kind": "interactive-3d" },
+    { "kind": "value-grid" },
+    { "kind": "stack-grid" },
+    { "kind": "message-bar" },
+    { "kind": "pricing" },
+    {
+      "kind": "cta-minimal",
+      "data": {
+        "title": "Ready for something custom?",
+        "action": { "label": "Talk to us", "href": "/en/services/custom" },
+        "align": "center"
+      }
+    },
+    { "kind": "faq" }
+  ],
+  "footer": {
+    "legal": [
+      { "label": "Privacy", "href": "/en/legal/privacy" },
+      { "label": "Terms", "href": "/en/legal/terms" }
+    ],
+    "social": [],
+    "note": ""
+  },
+  "messages": {
+    "betaNote": "",
+    "maintenance": ""
+  }
+}

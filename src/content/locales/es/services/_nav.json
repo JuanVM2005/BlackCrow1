@@ -1,0 +1,6 @@
+[
+  { "label": "Landing Page",  "slug": "landing",       "order": 1 },
+  { "label": "Sitio Web",     "slug": "website",       "order": 2 },
+  { "label": "Tienda Online", "slug": "ecommerce",     "order": 3 },
+  { "label": "Personalizado", "slug": "personalizado", "order": 4 }
+]

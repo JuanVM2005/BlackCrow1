@@ -1,0 +1,37 @@
+{
+  "title": ["DISEÑO", "SIN LÍMITES"],
+  "cards": [
+    {
+      "title": "De idea a realidad",
+      "body": "Definimos el propósito de tu\nweb y cómo alinearla con tus\nmetas."
+    },
+    {
+      "title": "Diseño UI/UX Intuitivo",
+      "body": "Diseño y desarrollo\na medida",
+      "widget": {
+        "kind": "cms",
+        "title": "CMS",
+        "items": [
+          { "label": "Gestión de web", "icon": "/icons/cms-manage.svg" },
+          { "label": "Multi-Lenguaje", "icon": "/icons/cms-i18n.svg" }
+        ]
+      }
+    },
+    {
+      "title": "Responsivo",
+      "body": "Compatible con dispositivos móviles",
+      "image": {
+        "src": "/images/value-grid/phone.webp",
+        "alt": "Mockup de teléfono mostrando diseño Black Crow"
+      }
+    },
+    {
+      "title": "Optimización Total",
+      "body": "Velocidad, SEO y rendimiento\nal máximo nivel.",
+      "image": {
+        "src": "/images/value-grid/rocket.webp",
+        "alt": "Cohete despegando representando alto rendimiento"
+      }
+    }
+  ]
+}

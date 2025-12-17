@@ -1,0 +1,31 @@
+{
+  "groups": [
+    {
+      "title": "Our creative stack for extraordinary websites",
+      "items": [
+        { "label": "Creativity", "icon": "/logos/stack/creativity.webp", "alt": "Creativity", "description": "To innovate without limits and craft unique ideas" },
+        { "label": "Figma", "icon": "/logos/stack/figma.svg", "alt": "Figma", "description": "Collaborative interface design" },
+        { "label": "Spline", "icon": "/logos/stack/spline.svg", "alt": "Spline", "description": "Real-time interactive 3D design" },
+        { "label": "Blender", "icon": "/logos/stack/blender.svg", "alt": "Blender", "description": "3D modeling for unique assets" },
+        { "label": "Webflow", "icon": "/logos/stack/webflow.svg", "alt": "Webflow", "description": "Professional visual layout" }
+      ]
+    },
+    {
+      "title": "The power of code: Technologies we use in our projects",
+      "items": [
+        { "label": "Three.js", "icon": "/logos/stack/threejs.svg", "alt": "Three.js", "description": "3D interactivity for the modern web" },
+        { "label": "Next.js", "icon": "/logos/stack/nextjs.svg", "alt": "Next.js", "description": "Production-grade React framework" },
+        { "label": "React", "icon": "/logos/stack/react.svg", "alt": "React", "description": "Dynamic, scalable user interfaces" },
+        { "label": "Prisma", "icon": "/logos/stack/prisma.svg", "alt": "Prisma", "description": "ORM for modern databases" },
+        { "label": "MongoDB", "icon": "/logos/stack/mongodb.svg", "alt": "MongoDB", "description": "Flexible and powerful database" }
+      ]
+    },
+    {
+      "title": "Design, Performance & Autonomy for your website",
+      "items": [
+        { "label": "Vercel", "icon": "/logos/stack/vercel.svg", "alt": "Vercel", "description": "Instant deployment with a global CDN" },
+        { "label": "Railway", "icon": "/logos/stack/railway.svg", "alt": "Railway", "description": "Backend infrastructure that scales easily" }
+      ]
+    }
+  ]
+}

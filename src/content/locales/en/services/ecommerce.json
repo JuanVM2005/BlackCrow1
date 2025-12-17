@@ -1,0 +1,25 @@
+{
+  "kind": "service",
+  "key": "ecommerce",
+  "header": {
+    "badge": "Service",
+    "title": "E-commerce",
+    "subtitle": "Your online store with reliable checkout, built for speed and scale."
+  },
+  "priceRange": "S/. 3,500 – S/. 8,000",
+  "featuresLeft": [
+    "Product catalog & collections",
+    "Cart and checkout integrated",
+    "Local & international payment gateways"
+  ],
+  "featuresRight": [
+    "Shipping and order status management",
+    "SEO for product pages",
+    "Scalable: coupons, reviews and more"
+  ],
+  "tags": ["Store", "Checkout", "Payments", "Scalable"],
+  "seo": {
+    "title": "E-commerce — Fast and secure online store",
+    "description": "We build conversion-focused stores with secure payments, product SEO and high performance."
+  }
+}

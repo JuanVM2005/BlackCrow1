@@ -1,0 +1,12 @@
+{
+    "kind": "gallery",
+    "items": [
+      { "src": "/images/gallery/crow-01.webp", "alt": "Cuervo con círculo neón rosa" },
+      { "src": "/images/gallery/crow-02.webp", "alt": "Relieve de cuervo en piedra" },
+      { "src": "/images/gallery/crow-03.webp", "alt": "Emblema de cuervo en negro mate" },
+      { "src": "/images/gallery/crow-04.webp", "alt": "Ilustración cósmica de cuervo" },
+      { "src": "/images/gallery/crow-05.webp", "alt": "Cuervo neón con anillo luminoso" },
+      { "src": "/images/gallery/crow-06.webp", "alt": "Detalle de plumaje metálico del cuervo" }
+    ]
+  }
+  

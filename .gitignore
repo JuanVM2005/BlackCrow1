@@ -1,0 +1,78 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ─────────────────────────
+# Dependencies
+# ─────────────────────────
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ─────────────────────────
+# Testing / Coverage / E2E Artifacts
+# ─────────────────────────
+/coverage
+/playwright-report
+/test-results
+/.playwright
+/blob-report
+/allure-results
+
+# ─────────────────────────
+# Next.js / Build Outputs
+# ─────────────────────────
+/.next/
+/out/
+/build
+/.turbo
+/.swc
+
+# ─────────────────────────
+# Hosting / Platforms
+# ─────────────────────────
+.vercel/
+
+# ─────────────────────────
+# Environment files (mantener SOLO plantillas .example)
+# ─────────────────────────
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# ─────────────────────────
+# TypeScript
+# ─────────────────────────
+*.tsbuildinfo
+# Nota: se recomienda versionar next-env.d.ts (no ignorarlo)
+
+# ─────────────────────────
+# Lint / Tooling caches
+# ─────────────────────────
+.eslintcache
+
+# ─────────────────────────
+# Storybook (si se usa)
+# ─────────────────────────
+/storybook-static
+
+# ─────────────────────────
+# Editor / OS junk
+# ─────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.pem
+
+# ─────────────────────────
+# Debug logs
+# ─────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

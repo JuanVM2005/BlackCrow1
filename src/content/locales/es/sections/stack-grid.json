@@ -1,0 +1,31 @@
+{
+  "groups": [
+    {
+      "title": "Nuestro stack creativo para diseñar sitios web fuera de lo común",
+      "items": [
+        { "label": "Creatividad", "icon": "/logos/stack/creativity.webp", "alt": "Creatividad", "description": "Para innovar sin límites y crear ideas únicas" },
+        { "label": "Figma", "icon": "/logos/stack/figma.svg", "alt": "Figma", "description": "Diseño colaborativo de interfaces" },
+        { "label": "Spline", "icon": "/logos/stack/spline.webp", "alt": "Spline", "description": "Diseño 3D interactivo en tiempo real" },
+        { "label": "Blender", "icon": "/logos/stack/blender.svg", "alt": "Blender", "description": "Modelado 3D para assets únicos" },
+        { "label": "Webflow", "icon": "/logos/stack/webflow.webp", "alt": "Webflow", "description": "Maquetación visual profesional" }
+      ]
+    },
+    {
+      "title": "El poder del código: Tecnologías que usamos en nuestros proyectos",
+      "items": [
+        { "label": "Three.js", "icon": "/logos/stack/threejs.svg", "alt": "Three.js", "description": "Interacción 3D para la web moderna" },
+        { "label": "Next.js", "icon": "/logos/stack/nextjs.svg", "alt": "Next.js", "description": "Framework React para producción" },
+        { "label": "React", "icon": "/logos/stack/react.svg", "alt": "React", "description": "Interfaces dinámicas y escalables" },
+        { "label": "Prisma", "icon": "/logos/stack/prisma.svg", "alt": "Prisma", "description": "ORM para bases de datos modernas" },
+        { "label": "MongoDB", "icon": "/logos/stack/mongodb.svg", "alt": "MongoDB", "description": "Base de datos flexible y poderosa" }
+      ]
+    },
+    {
+      "title": "Diseño, Desempeño y Autonomía para tu Sitio Web",
+      "items": [
+        { "label": "Vercel", "icon": "/logos/stack/vercel.svg", "alt": "Vercel", "description": "Deploy instantáneo con CDN global" },
+        { "label": "Railway", "icon": "/logos/stack/railway.svg", "alt": "Railway", "description": "Infraestructura backend fácil de escalar" }
+      ]
+    }
+  ]
+}

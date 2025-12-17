@@ -1,0 +1,37 @@
+{
+  "title": ["DESIGN", "WITHOUT LIMITS"],
+  "cards": [
+    {
+      "title": "From idea to reality",
+      "body": "We define your website’s\npurpose and align it with your\ngoals."
+    },
+    {
+      "title": "Intuitive UI/UX Design",
+      "body": "Tailor-made design\n& development",
+      "widget": {
+        "kind": "cms",
+        "title": "CMS",
+        "items": [
+          { "label": "Site management", "icon": "/icons/cms-manage.svg" },
+          { "label": "Multi-language", "icon": "/icons/cms-i18n.svg" }
+        ]
+      }
+    },
+    {
+      "title": "Responsive",
+      "body": "Compatible with mobile devices",
+      "image": {
+        "src": "/images/value-grid/phone.webp",
+        "alt": "Phone mockup displaying Black Crow design"
+      }
+    },
+    {
+      "title": "Total Optimization",
+      "body": "Speed, SEO and performance\nat the highest level.",
+      "image": {
+        "src": "/images/value-grid/rocket.webp",
+        "alt": "Rocket launch representing high performance"
+      }
+    }
+  ]
+}

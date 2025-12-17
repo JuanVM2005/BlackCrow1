@@ -1,0 +1,11 @@
+{
+  "kind": "message-bar",
+  "textParts": [
+    { "text": "Inspiration" },
+    { "text": "Interaction" },
+    { "text": "Visual Impact" },
+    { "text": "Website that Connects", "highlight": true }
+  ],
+  "separator": " + ",
+  "align": "center"
+}

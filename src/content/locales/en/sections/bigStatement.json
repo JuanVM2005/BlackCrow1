@@ -1,0 +1,17 @@
+{
+    "kind": "bigStatement",
+    "data": {
+      "left": {
+        "lines": ["BIG", "IDEAS"],
+        "ariaLabel": "Big ideas"
+      },
+      "right": {
+        "headline": "We turn ideas into results",
+        "copy": "We dive into your vision to turn it into a unique digital experience. From research through launch, we work with you at every step to achieve functional, memorable outcomes."
+      },
+      "layout": {
+        "container": "2xl"
+      }
+    }
+  }
+  

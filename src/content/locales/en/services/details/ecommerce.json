@@ -1,0 +1,29 @@
+{
+    "title": "Service details",
+    "intro": "Scope and guidelines for your online store.",
+    "sections": [
+      {
+        "title": "What’s included",
+        "items": [
+          "Product catalog and collections.",
+          "Cart, checkout and enabled payment gateways.",
+          "Shipping configuration and order statuses.",
+          "Basic SEO for product pages.",
+          "Performance optimization and caching."
+        ]
+      },
+      {
+        "title": "Deliverables",
+        "items": [
+          "Ready-to-operate implementation.",
+          "Training on product creation and management.",
+          "Best practices guide for photos and descriptions."
+        ]
+      }
+    ],
+    "footnotes": [
+      "Payment gateways and transactional fees are handled with the provider.",
+      "Advanced features (coupons, reviews, memberships) are quoted separately."
+    ]
+  }
+  

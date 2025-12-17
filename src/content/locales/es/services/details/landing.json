@@ -1,0 +1,29 @@
+{
+    "title": "Detalles del servicio",
+    "intro": "Información ampliada sobre el alcance de la Landing Page.",
+    "sections": [
+      {
+        "title": "Qué incluye",
+        "items": [
+          "Diseño visual adaptativo (mobile-first).",
+          "Implementación accesible con buenas prácticas SEO básico.",
+          "1 formulario de contacto con validaciones.",
+          "Hasta 3 secciones personalizadas de contenido.",
+          "Optimización de performance inicial (imágenes y fuentes)."
+        ]
+      },
+      {
+        "title": "Entregables",
+        "items": [
+          "Código fuente versionado.",
+          "Implementación en hosting administrado.",
+          "Guía breve de edición de contenidos."
+        ]
+      }
+    ],
+    "footnotes": [
+      "Plazos y costos pueden variar según cambios de alcance.",
+      "Integraciones externas o animaciones avanzadas se cotizan aparte."
+    ]
+  }
+  

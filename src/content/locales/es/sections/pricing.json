@@ -1,0 +1,74 @@
+{
+  "kind": "pricing",
+  "data": {
+    "heading": {
+      "titleLines": ["Elige tu Plan,", "Despega", "HOY"]
+    },
+    "aside": [
+      "— Todas diseñadas desde cero, con código real y obsesión por los detalles.",
+      {
+        "type": "p",
+        "children": [
+          { "text": "Incluimos " },
+          { "text": "hosting + dominio", "strong": true },
+          { "text": " gratis por " },
+          { "text": "1 año", "strong": true },
+          { "text": " en todos los planes." }
+        ]
+      }
+    ],
+    "plans": [
+      {
+        "id": "launch",
+        "name": "Lanzamiento",
+        "price": { "amount": "S/ 990", "period": "único" },
+        "features": [
+          "1 página (hero + secciones clave)",
+          "Animaciones suaves (Lenis + GSAP básico)",
+          "Optimización de performance y accesibilidad",
+          "Analytics + SEO base",
+          "Hosting + dominio 1 año"
+        ],
+        "cta": {
+          "label": "Empezar",
+          "href": "/es/servicios/landing"
+        }
+      },
+      {
+        "id": "pro",
+        "name": "Profesional",
+        "badge": "Más popular",
+        "featured": true,
+        "price": { "amount": "S/ 1,890", "period": "único" },
+        "features": [
+          "Sitio multipágina (3–5 secciones)",
+          "Micro-interacciones y escenas scroll",
+          "SEO técnico + OpenGraph + Sitemap",
+          "Blog/CMS listo",
+          "Soporte 30 días"
+        ],
+        "cta": {
+          "label": "Cotizar Proyecto",
+          "href": "/es/servicios/website"
+        }
+      },
+      {
+        "id": "elite",
+        "name": "Elite",
+        "price": "A medida",
+        "features": [
+          "Arquitectura a medida (Next 15 + R3F)",
+          "Shaders / 3D / animaciones avanzadas",
+          "Pasarela de pago e integraciones",
+          "Panel admin & flujos complejos",
+          "Acompañamiento experto"
+        ],
+        "cta": {
+          "label": "Agenda una llamada",
+          "href": "/es/servicios/ecommerce"
+        }
+      }
+    ],
+    "disclaimer": "Los precios pueden variar según alcance final. Escríbenos y ajustamos el plan a tu necesidad."
+  }
+}

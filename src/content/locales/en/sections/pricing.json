@@ -1,0 +1,72 @@
+{
+  "kind": "pricing",
+  "data": {
+    "heading": { "titleLines": ["Choose your Plan,", "Take Off", "TODAY"] },
+    "aside": [
+      "— All crafted from scratch with real code and an obsession for detail.",
+      {
+        "type": "p",
+        "children": [
+          { "text": "We include " },
+          { "text": "hosting + domain", "strong": true },
+          { "text": " free for " },
+          { "text": "1 year", "strong": true },
+          { "text": " in every plan." }
+        ]
+      }
+    ],
+    "plans": [
+      {
+        "id": "launch",
+        "name": "Launch",
+        "price": { "amount": "S/ 990", "period": "one-time" },
+        "features": [
+          "1 page (hero + key sections)",
+          "Smooth animations (Lenis + basic GSAP)",
+          "Performance & accessibility optimization",
+          "Analytics + baseline SEO",
+          "Hosting + domain 1 year"
+        ],
+        "cta": {
+          "label": "Get Started",
+          "href": "/en/services/landing"
+        }
+      },
+      {
+        "id": "pro",
+        "name": "Professional",
+        "badge": "Most popular",
+        "featured": true,
+        "price": { "amount": "S/ 1,890", "period": "one-time" },
+        "features": [
+          "Multipage site (3–5 sections)",
+          "Micro-interactions & scroll scenes",
+          "Technical SEO + OpenGraph + Sitemap",
+          "Blog/CMS ready",
+          "30-day support"
+        ],
+        "cta": {
+          "label": "Request a Quote",
+          "href": "/en/services/website"
+        }
+      },
+      {
+        "id": "elite",
+        "name": "Elite",
+        "price": "Custom",
+        "features": [
+          "Bespoke architecture (Next 15 + R3F)",
+          "Shaders / 3D / advanced animations",
+          "Payments & integrations",
+          "Admin panel & complex flows",
+          "Expert guidance"
+        ],
+        "cta": {
+          "label": "Book a Call",
+          "href": "/en/services/ecommerce"
+        }
+      }
+    ],
+    "disclaimer": "Prices may vary based on final scope. Contact us and we’ll tailor the plan to your needs."
+  }
+}
