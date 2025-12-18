@@ -24,7 +24,7 @@ function useCoarsePointer(): boolean {
     if (typeof window === "undefined") return;
 
     const mq = window.matchMedia(
-      "(hover: none) and (pointer: coarse), (any-hover: none) and (any-pointer: coarse)"
+      "(hover: none) and (pointer: coarse), (any-hover: none) and (any-pointer: coarse)",
     );
 
     const update = () => setCoarse(!!mq.matches);
@@ -70,15 +70,16 @@ void main() {
 }
 `;
 
-/** ✅ Shader “burbuja” por defecto (con boost de interacción SOLO en coarse pointer). */
+/** ✅ Shader “burbuja” por defecto (con boost de interacción SOLO en coarse pointer + reveal suave). */
 const FRAGMENT_BURBUJA = /* glsl */ `
 uniform float iTime;
 uniform vec2 iResolution;
 uniform vec2 iMouse;
 
 // ✅ nuevos uniforms (no rompen si no se usan en otros shaders)
-uniform float uInteract;   // 0 = normal, 1 = mobile/touch (coarse)
-uniform vec2  uMouseSmooth; // mouse suavizado en pixeles
+uniform float uInteract;     // 0 = normal, 1 = mobile/touch (coarse)
+uniform vec2  uMouseSmooth;  // mouse suavizado en pixeles
+uniform float uReveal;       // 0..1 reveal al entrar en viewport
 
 varying vec2 vUv;
 
@@ -121,8 +122,6 @@ vec2 mouseNorm() {
 // 🎯 Deformación con cursor (mobile: más interacción + más “desplazamiento”)
 float cursorDeform(vec3 p) {
   vec2 mouseN = mouseNorm();
-
-  // ✅ Mobile boost: aumenta radio, fuerza y velocidad (uInteract = 1 en coarse pointer)
   float boost = mix(1.0, 1.8, uInteract);
 
   float dist = length(p.xy - mouseN.xy);
@@ -141,7 +140,6 @@ float sceneSDF(vec3 p) {
   float time = iTime * 0.5;
   float y = p.y;
 
-  // ✅ “desplazamiento” adicional: la burbuja “sigue” más al dedo en mobile
   vec2 mouseN = mouseNorm();
   float follow = mix(0.0, 0.22, uInteract);
   p.x += mouseN.x * follow;
@@ -217,6 +215,18 @@ mat4 customViewMatrix(vec3 eye, vec3 center, vec3 up) {
   return mat4(vec4(s, 0.0), vec4(u, 0.0), vec4(-f, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 }
 
+// ✅ Reveal radial suave (0..1)
+float revealMask(vec2 uv, float t) {
+  vec2 p = uv - 0.5;
+  float r = length(p); // ~0..0.707
+  float radius = mix(0.06, 0.86, clamp(t, 0.0, 1.0));
+  float edge = mix(0.22, 0.16, clamp(t, 0.0, 1.0));
+  float m = smoothstep(radius, radius - edge, r);
+  // “asienta” un poco más el centro al final
+  float core = smoothstep(0.0, 1.0, t);
+  return clamp(m * (0.85 + 0.15 * core), 0.0, 1.0);
+}
+
 void main() {
   vec2 fragCoord = vUv * iResolution.xy;
   vec3 viewDir = rayDirection(45.0, iResolution.xy, fragCoord);
@@ -248,7 +258,12 @@ void main() {
   vec3 color = mix(phong, cyberColor, 0.5);
   color += glow * cyberColor * 5.0;
 
-  gl_FragColor = vec4(color, 1.0);
+  // ✅ Reveal aplicado al shader (se siente al entrar en viewport)
+  float m = revealMask(vUv, uReveal);
+  float settle = smoothstep(0.0, 1.0, uReveal);
+  color *= m * (0.78 + 0.22 * settle);
+
+  gl_FragColor = vec4(color, m);
 }
 `;
 
@@ -278,6 +293,9 @@ function FullscreenQuad({
   const mouseTargetRef = useRef(new THREE.Vector2(0, 0));
   const mouseSmoothRef = useRef(new THREE.Vector2(0, 0));
 
+  // Reveal (0..1) animado por active/paused
+  const revealRef = useRef(0);
+
   const uniforms = useMemo(
     () => ({
       iTime: new THREE.Uniform(0),
@@ -287,8 +305,9 @@ function FullscreenQuad({
       // ✅ nuevos
       uInteract: new THREE.Uniform(0),
       uMouseSmooth: new THREE.Uniform(new THREE.Vector2(0, 0)),
+      uReveal: new THREE.Uniform(0),
     }),
-    []
+    [],
   );
 
   const { size, gl, pointer } = useThree();
@@ -306,6 +325,17 @@ function FullscreenQuad({
     uniforms.uInteract.value = mobileBoost ? 1 : 0;
   }, [mobileBoost, uniforms]);
 
+  // Si se pausa (sale del viewport), resetea reveal para que re-entre bonito la próxima vez
+  useEffect(() => {
+    if (paused) {
+      revealRef.current = 0;
+      uniforms.uReveal.value = 0;
+    } else {
+      // cuando vuelve a estar activo, reinicia tiempo para evitar “saltos”
+      startTimeRef.current = performance.now();
+    }
+  }, [paused, uniforms]);
+
   // Reinicia el tiempo al volver a pestaña visible
   useEffect(() => {
     const onVis = () => {
@@ -318,10 +348,27 @@ function FullscreenQuad({
   }, []);
 
   useFrame(() => {
-    if (reducedMotion || paused) return;
+    // ✅ aunque esté paused, queremos que el reveal pueda “asentar” al prender.
+    // Pero si reducedMotion, dejamos todo instantáneo.
+    if (reducedMotion) {
+      uniforms.uReveal.value = paused ? 0 : 1;
+      if (paused) return;
+    }
 
     const now = performance.now();
-    uniforms.iTime.value = (now - startTimeRef.current) / 1000;
+
+    // Tiempo solo cuando está activo
+    if (!paused) {
+      uniforms.iTime.value = (now - startTimeRef.current) / 1000;
+    }
+
+    // Reveal smoothing (solo cuando está activo)
+    const targetReveal = paused ? 0 : 1;
+    const revealLerp = paused ? 0.35 : 0.12; // entra suave y se nota
+    revealRef.current += (targetReveal - revealRef.current) * revealLerp;
+    uniforms.uReveal.value = THREE.MathUtils.clamp(revealRef.current, 0, 1);
+
+    if (paused) return;
 
     // Pointer en píxeles (R3F da coords normalizadas [-1,1])
     const dpr = gl.getPixelRatio();
@@ -360,14 +407,6 @@ function FullscreenQuad({
   );
 }
 
-/**
- * Canvas WebGL para renderizar el shader como fondo interactivo.
- * - Sin colores ni tamaños hardcodeados en TSX (DPR via tokens).
- * - Respeta prefers-reduced-motion.
- * - Fallback limpio si no hay WebGL.
- * - Respeta `active` (para apagarlo al salir de viewport).
- * - ✅ Mobile/touch: aumenta interacción y “desplazamiento” (sin afectar desktop).
- */
 function ShaderCanvasBase({
   fragSource,
   vertexSource = DEFAULT_VERTEX,
@@ -390,13 +429,13 @@ function ShaderCanvasBase({
     qualityToken === "low"
       ? readCssVarNumber("--fx-dpr-low", 0.75)
       : qualityToken === "medium"
-      ? readCssVarNumber("--fx-dpr-medium", 1)
-      : readCssVarNumber(
-          "--fx-dpr-high",
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio || 1, 1.75)
-            : 1
-        );
+        ? readCssVarNumber("--fx-dpr-medium", 1)
+        : readCssVarNumber(
+            "--fx-dpr-high",
+            typeof window !== "undefined"
+              ? Math.min(window.devicePixelRatio || 1, 1.75)
+              : 1,
+          );
 
   const isPaused = !active || paused === true;
 
@@ -416,6 +455,7 @@ function ShaderCanvasBase({
       <Canvas
         dpr={dpr}
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+        // ✅ cuando está fuera de viewport lo pausamos, pero al entrar vuelve “always”
         frameloop={reducedMotion || isPaused ? "demand" : "always"}
         camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
       >
@@ -440,6 +480,6 @@ Depende de:
 
 Notas:
 - El “mobile boost” NO usa breakpoints; usa capacidades (hover/pointer).
-- Si pasas un `fragSource` externo que no declare uInteract/uMouseSmooth,
+- Si pasas un `fragSource` externo que no declare uInteract/uMouseSmooth/uReveal,
   no se rompe (los uniforms extra simplemente no se usan).
 */

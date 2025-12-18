@@ -41,7 +41,8 @@ export default function TopBar({
       : `/${locale}/services/custom`;
 
   const ctaLabel =
-    ctaLabelProp ?? (locale === "es" ? "Empieza tu proyecto" : "Start your project");
+    ctaLabelProp ??
+    (locale === "es" ? "Empieza tu proyecto" : "Start your project");
 
   const trackCtaClick = React.useCallback(() => {
     const payload = {
@@ -91,27 +92,27 @@ export default function TopBar({
   return (
     <div
       className={cn(
-        "sticky top-0 z-[var(--z-header)]",
-        onServicesDark
-          ? "text-[color:var(--text-inverse)]"
-          : "text-[color:var(--text)]",
+        "sticky top-0 z-(--z-header)",
+        onServicesDark ? "text-(--text-inverse)" : "text-(--text)"
       )}
     >
-      <Container className="flex items-center justify-between gap-3 h-[var(--header-h)]">
-        
+      <Container className="flex items-center justify-between gap-3 h-(--header-h)">
         {/* LOGO */}
         <Link
           href={homeHref}
           aria-label={brand}
-          className="inline-flex items-center gap-2 transition-colors duration-200 hover:text-[color:var(--pink-500)]"
+          className={cn(
+            "inline-flex items-center gap-2 transition-colors duration-200",
+            "hover:text-(--pink-500)"
+          )}
         >
           <span className="text-lg md:text-xl font-semibold tracking-tight leading-none">
             {brand}
           </span>
         </Link>
 
-        {/* ACCIONES */}
-        <div className="flex items-center gap-3">
+        {/* ACCIONES: SOLO DESDE md (para que en mobile solo exista en el menubar) */}
+        <div className="hidden md:flex items-center gap-3">
           <LanguageSwitch />
 
           {/* CTA SIN BORDE + HOVER ROSADO */}
@@ -121,7 +122,7 @@ export default function TopBar({
             size="md"
             className={cn(
               "border-none shadow-none transition-colors duration-200",
-              "hover:bg-[color:var(--pink-500)]"
+              "hover:bg-(--pink-500)"
             )}
           >
             <Link

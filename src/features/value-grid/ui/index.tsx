@@ -8,22 +8,22 @@ import {
   useScroll,
   useTransform,
   useReducedMotion,
+  cubicBezier,
+  type Variants,
 } from "framer-motion";
 import type { ValueGridProps } from "../content/value-grid.mapper";
 
 /**
- * ValueGrid (v7)
- * - Desktop/tablet: layout original + título scroll (se activa antes) + título más grande.
- * - Mobile responsive:
- *   - XS: 1 por fila (cuadrados).
- *   - Al agrandar (>= sm): 2 en fila, alternando RECTÁNGULO (full width) → 2 CUADRADOS → RECTÁNGULO.
+ * ValueGrid (v10)
+ * - Mantiene layout + scroll-title.
+ * - Entrada al “pasar por la sección”: cards aparecen 1 por 1 (stagger) con delay notorio.
+ * - Fix TS: evita ease: number[] (usa cubicBezier()) + variants tipados.
  */
 export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
   const [idea, uiux, responsive, optimization] = cards;
   const titleId = "value-grid-heading";
 
   const prefersReducedMotion = useReducedMotion();
-
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Detecta mobile
@@ -66,6 +66,56 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
         }
       : undefined);
 
+  // ===== Entrada 1x1 (stagger) con delay más notorio =====
+  const EASE = React.useMemo(() => cubicBezier(0.2, 0.8, 0.2, 1), []);
+
+  const gridContainerVariants = React.useMemo<Variants>(() => {
+    if (prefersReducedMotion) {
+      return {
+        hidden: {},
+        show: { transition: { delayChildren: 0.06, staggerChildren: 0.08 } },
+      };
+    }
+    return {
+      hidden: {},
+      show: {
+        transition: {
+          delayChildren: 0.28, // más delay general
+          staggerChildren: 0.16, // más separación entre cards
+        },
+      },
+    };
+  }, [prefersReducedMotion]);
+
+  const gridItemVariants = React.useMemo<Variants>(() => {
+    if (prefersReducedMotion) {
+      return {
+        hidden: { opacity: 0, y: 0, scale: 1, filter: "blur(0px)" },
+        show: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: "blur(0px)",
+          transition: { duration: 0.2, ease: "linear" },
+        },
+      };
+    }
+
+    return {
+      hidden: { opacity: 0, y: 22, scale: 0.985, filter: "blur(7px)" },
+      show: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: "blur(0px)",
+        transition: { duration: 0.62, ease: EASE },
+      },
+    };
+  }, [EASE, prefersReducedMotion]);
+
+  // Dispara cuando ya está más dentro de viewport (se nota más el delay)
+  const viewport = React.useMemo(() => ({ once: true, amount: 0.34 }), []);
+
   return (
     <section aria-labelledby={titleId} className="relative">
       <div
@@ -83,7 +133,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
               transition={
                 prefersReducedMotion
                   ? undefined
-                  : { delay: 0.22, duration: 0.65, ease: [0.2, 0.8, 0.2, 1] }
+                  : { delay: 0.22, duration: 0.65, ease: EASE }
               }
             >
               {titleLines.map((line, i) => (
@@ -115,10 +165,19 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
 
         {/* GRID por encima del título */}
         <div className="relative z-1">
-          {/* ===== MOBILE: XS cuadrados / SM+ patrón rectángulo + 2 cuadrados + rectángulo ===== */}
-          <div className="md:hidden grid gap-3 sm:grid-cols-2 sm:auto-rows-fr">
+          {/* ===== MOBILE ===== */}
+          <motion.div
+            className="md:hidden grid gap-3 sm:grid-cols-2 sm:auto-rows-fr"
+            variants={gridContainerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewport}
+          >
             {/* 1) RECTÁNGULO en sm+ (full width), en XS sigue cuadrado */}
-            <div className="aspect-square sm:col-span-2 sm:aspect-video">
+            <motion.div
+              variants={gridItemVariants}
+              className="aspect-square sm:col-span-2 sm:aspect-video"
+            >
               <Card
                 ariaLabel={idea.title}
                 className="h-full"
@@ -148,10 +207,10 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                   ) : null}
                 </div>
               </Card>
-            </div>
+            </motion.div>
 
             {/* 2) CUADRADO */}
-            <div className="aspect-square">
+            <motion.div variants={gridItemVariants} className="aspect-square">
               <Card
                 ariaLabel={uiux.title}
                 className="relative h-full"
@@ -188,10 +247,10 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                   ) : null}
                 </div>
               </Card>
-            </div>
+            </motion.div>
 
             {/* 3) CUADRADO */}
-            <div className="aspect-square">
+            <motion.div variants={gridItemVariants} className="aspect-square">
               <Card
                 ariaLabel={responsive.title}
                 className="h-full"
@@ -237,10 +296,13 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                   ) : null}
                 </div>
               </Card>
-            </div>
+            </motion.div>
 
             {/* 4) RECTÁNGULO en sm+ (full width), en XS sigue cuadrado */}
-            <div className="aspect-square sm:col-span-2 sm:aspect-video">
+            <motion.div
+              variants={gridItemVariants}
+              className="aspect-square sm:col-span-2 sm:aspect-video"
+            >
               <Card
                 ariaLabel={optimization.title}
                 className="relative h-full overflow-hidden"
@@ -286,14 +348,20 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                   ) : null}
                 </div>
               </Card>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          {/* ===== DESKTOP/TABLET: layout original ===== */}
-          <div className="hidden md:block">
+          {/* ===== DESKTOP/TABLET ===== */}
+          <motion.div
+            className="hidden md:block"
+            variants={gridContainerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewport}
+          >
             {/* === FILA SUPERIOR === */}
             <div className="grid gap-3 md:gap-4 md:grid-cols-[minmax(80px,0.7fr)_minmax(280px,1.6fr)] lg:grid-cols-[minmax(100px,0.7fr)_minmax(400px,1.7fr)]">
-              <div className="md:aspect-square">
+              <motion.div variants={gridItemVariants} className="md:aspect-square">
                 <Card
                   ariaLabel={idea.title}
                   className="h-full"
@@ -325,9 +393,9 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                     )}
                   </div>
                 </Card>
-              </div>
+              </motion.div>
 
-              <div className="md:h-full">
+              <motion.div variants={gridItemVariants} className="md:h-full">
                 <Card
                   ariaLabel={uiux.title}
                   className="relative h-full"
@@ -358,12 +426,12 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                   </div>
                   {cmsData ? <CMSWidget cms={cmsData} /> : null}
                 </Card>
-              </div>
+              </motion.div>
             </div>
 
             {/* === FILA INFERIOR (invertida) === */}
             <div className="mt-3 md:mt-4 grid gap-3 md:gap-4 md:grid-cols-[minmax(280px,1.6fr)_minmax(80px,0.7fr)] lg:grid-cols-[minmax(400px,1.7fr)_minmax(100px,0.7fr)]">
-              <div className="md:h-full">
+              <motion.div variants={gridItemVariants} className="md:h-full">
                 <Card
                   ariaLabel={responsive.title}
                   className="h-full"
@@ -410,9 +478,9 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                     )}
                   </div>
                 </Card>
-              </div>
+              </motion.div>
 
-              <div className="md:aspect-square">
+              <motion.div variants={gridItemVariants} className="md:aspect-square">
                 <Card
                   ariaLabel={optimization.title}
                   className="relative h-full overflow-hidden"
@@ -457,9 +525,9 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                     </div>
                   )}
                 </Card>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

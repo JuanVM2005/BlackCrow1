@@ -162,7 +162,7 @@ export default function BottomDock() {
   return (
     <div
       className={[
-        "fixed bottom-0 left-0 right-0 z-[var(--z-header)]",
+        "fixed bottom-0 left-0 right-0 z-(--z-header)",
         "pointer-events-none",
         "pb-[env(safe-area-inset-bottom)]",
       ].join(" ")}

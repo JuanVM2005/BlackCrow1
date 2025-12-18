@@ -56,7 +56,6 @@ async function FooterServer({ locale, surface }: Props) {
 /** Vista pura (testable) */
 function FooterView({
   ariaLabel,
-  brand,
   divider,
   columns,
   legal,
@@ -70,6 +69,10 @@ function FooterView({
     ? "/logos/brand-mark-light.svg"
     : "/logos/brand-mark.svg";
 
+  const ringOffset = isInverse
+    ? "ring-offset-(--neutral-1000)"
+    : "ring-offset-(--neutral-50)";
+
   return (
     <footer
       aria-label={ariaLabel}
@@ -81,7 +84,7 @@ function FooterView({
         "text-(--text)",
       ].join(" ")}
     >
-      {/* Divider superior con fade en extremos */}
+      {/* Divider superior con fade en extremos (diseño original) */}
       {divider && (
         <div aria-hidden className="w-full">
           <div
@@ -96,25 +99,24 @@ function FooterView({
 
       <Container className="py-12 md:py-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
-          {/* Columna 0: Marca/Logo (sin tagline) */}
+          {/* Columna 0: Solo Logo (sin texto) */}
           <div className="flex flex-col items-start gap-3 md:gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoSrc}
-              alt={brand?.name ?? "Black Crow"}
-              className="w-10 h-auto md:w-12"
+              alt=""
+              className="h-auto w-24 sm:w-28 md:w-28 lg:w-32"
               decoding="async"
               loading="lazy"
             />
           </div>
 
-          {/* Columnas de navegación/contenido */}
+          {/* Columnas de navegación/contenido (diseño original) */}
           {columns.map((col) => (
             <nav key={col.title} aria-label={col.title} className="space-y-3">
               <h3 className="font-semibold">{col.title}</h3>
               <ul className="space-y-3">
                 {col.items.map((item) => {
-                  // ✅ en items sí puede venir isExternal desde el mapper
                   const externalFlag =
                     (item as any).isExternal === true || isExternalUrl(item.href);
                   const href = withLocale(locale, item.href);
@@ -130,7 +132,8 @@ function FooterView({
                         className={[
                           "relative inline-flex items-center gap-2",
                           "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                          "focus-visible:ring-(--ring) ring-offset-(--neutral-50)",
+                          "focus-visible:ring-(--ring)",
+                          ringOffset,
                           "after:content-[''] after:absolute after:left-0 after:bottom-0",
                           "after:h-(--underline-h,1px) after:w-0 after:bg-current",
                           "after:transition-[width] after:duration-200",
@@ -150,7 +153,7 @@ function FooterView({
           ))}
         </div>
 
-        {/* Legal opcional */}
+        {/* Legal opcional (diseño original) */}
         {legal?.copyright && (
           <div className="mt-10 pt-6 border-t border-(--neutral-300)">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -161,7 +164,6 @@ function FooterView({
               {legal.links && legal.links.length > 0 && (
                 <ul className="flex flex-wrap gap-x-6 gap-y-2">
                   {legal.links.map((l) => {
-                    // ❗️En legal.links el tipo NO trae isExternal ⇒ inferimos por URL absoluta
                     const external = isExternalUrl(l.href);
                     const href = withLocale(locale, l.href);
                     const rel = external ? "noreferrer" : undefined;
@@ -176,7 +178,8 @@ function FooterView({
                           className={[
                             "relative inline-flex items-center",
                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                            "focus-visible:ring-(--ring) ring-offset-(--neutral-50)",
+                            "focus-visible:ring-(--ring)",
+                            ringOffset,
                             "after:content-[''] after:absolute after:left-0 after:bottom-0",
                             "after:h-(--underline-h,1px) after:w-0 after:bg-current",
                             "after:transition-[width] after:duration-200",
@@ -198,7 +201,7 @@ function FooterView({
         )}
       </Container>
 
-      {/* Línea inferior del footer, un poco más arriba y con más margen abajo */}
+      {/* Línea inferior del footer (diseño original) */}
       <div
         aria-hidden
         className="mt-4 mb-10 border-t border-(--neutral-300) opacity-40"

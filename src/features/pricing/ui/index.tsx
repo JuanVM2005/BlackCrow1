@@ -1,5 +1,8 @@
 // src/features/pricing/ui/index.tsx
+"use client";
+
 import { Fragment } from "react";
+import { motion, cubicBezier, useReducedMotion, type Variants } from "framer-motion";
 import Container from "@/ui/Container";
 import Section from "@/ui/Section";
 import { Heading, Text } from "@/ui/Typography";
@@ -23,6 +26,43 @@ export default function Pricing({
     featured:
       typeof p.featured === "boolean" ? p.featured : arr.length === 3 && i === 1,
   }));
+
+  const prefersReducedMotion = useReducedMotion();
+  const EASE = cubicBezier(0.2, 0.8, 0.2, 1);
+
+  // ✅ No tan exagerado: menos blur, menos Y, stagger más corto, delay suave
+  const gridVariants: Variants = prefersReducedMotion
+    ? {
+        hidden: {},
+        show: { transition: { delayChildren: 0.06, staggerChildren: 0.08 } },
+      }
+    : {
+        hidden: {},
+        show: {
+          transition: {
+            delayChildren: 0.14,
+            staggerChildren: 0.12,
+          },
+        },
+      };
+
+  const cardVariants: Variants = prefersReducedMotion
+    ? {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { duration: 0.2, ease: "linear" } },
+      }
+    : {
+        hidden: { opacity: 0, y: 14, scale: 0.992, filter: "blur(3px)" },
+        show: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: "blur(0px)",
+          transition: { duration: 0.52, ease: EASE },
+        },
+      };
+
+  const viewport = { once: true, amount: 0.22 } as const;
 
   return (
     <Section id={id}>
@@ -65,18 +105,25 @@ export default function Pricing({
           </aside>
         </div>
 
-        {/* Grid de tarjetas */}
+        {/* Grid de tarjetas (entrada 1x1) */}
         <div className="mt-8 md:mt-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-7">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-7"
+            variants={gridVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewport}
+          >
             {normalized.map((plan, i) => (
-              <PlanCard
-                key={plan.id}
-                {...plan}
-                // Líneas sólidas por contenedor: izq=rojas(rose), centro=moradas(violet), der=celestes(blue)
-                railColor={i === 0 ? "rose" : i === 1 ? "violet" : "blue"}
-              />
+              <motion.div key={plan.id} variants={cardVariants}>
+                <PlanCard
+                  {...plan}
+                  // Líneas sólidas por contenedor: izq=rojas(rose), centro=moradas(violet), der=celestes(blue)
+                  railColor={i === 0 ? "rose" : i === 1 ? "violet" : "blue"}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Disclaimer */}

@@ -1,6 +1,9 @@
 // src/features/stack-grid/ui/index.tsx
+"use client";
+
 import Image from "next/image";
 import React from "react";
+import { motion, useReducedMotion, cubicBezier, type Variants } from "framer-motion";
 import Container from "@/ui/Container";
 import { Heading } from "@/ui/Typography";
 import { cn } from "@/utils/cn";
@@ -24,15 +27,39 @@ const GLOW_SCHEMES: GlowScheme[] = [
     bottom:
       "radial-gradient(circle, rgba(252,167,255,0.85) 0%, rgba(255,227,252,0.12) 65%, rgba(255,227,252,0) 100%)",
   },
-  { top: "radial-gradient(circle, #ffb34788, #6dd5fa88)", bottom: "radial-gradient(circle, #8360c388, #2ebf9188)" },
-  { top: "radial-gradient(circle, #ff9a9eaa, #fad0c4aa)", bottom: "radial-gradient(circle, #a1c4fd88, #c2e9fb88)" },
-  { top: "radial-gradient(circle, #f7b733aa, #fc4a1aaa)", bottom: "radial-gradient(circle, #ff5e62aa, #f968)" },
-  { top: "radial-gradient(circle, #00c6ff99, #0072ff99)", bottom: "radial-gradient(circle, #6a11cb88, #2575fc88)" },
-  { top: "radial-gradient(circle, #ff8a00aa, #e52e71aa)", bottom: "radial-gradient(circle, #662d8caa, #ed1e79aa)" },
+  {
+    top: "radial-gradient(circle, #ffb34788, #6dd5fa88)",
+    bottom: "radial-gradient(circle, #8360c388, #2ebf9188)",
+  },
+  {
+    top: "radial-gradient(circle, #ff9a9eaa, #fad0c4aa)",
+    bottom: "radial-gradient(circle, #a1c4fd88, #c2e9fb88)",
+  },
+  {
+    top: "radial-gradient(circle, #f7b733aa, #fc4a1aaa)",
+    bottom: "radial-gradient(circle, #ff5e62aa, #f968)",
+  },
+  {
+    top: "radial-gradient(circle, #00c6ff99, #0072ff99)",
+    bottom: "radial-gradient(circle, #6a11cb88, #2575fc88)",
+  },
+  {
+    top: "radial-gradient(circle, #ff8a00aa, #e52e71aa)",
+    bottom: "radial-gradient(circle, #662d8caa, #ed1e79aa)",
+  },
   { top: "radial-gradient(circle, #fff4, #9992)", bottom: "radial-gradient(circle, #ccc3, #7772)" },
-  { top: "radial-gradient(circle, #61dafbaa, #20232a66)", bottom: "radial-gradient(circle, #282c34aa, #61dafbaa)" },
-  { top: "radial-gradient(circle, #d53369aa, #cbad6daa)", bottom: "radial-gradient(circle, #f6d365aa, #fda085aa)" },
-  { top: "radial-gradient(circle, #56ab2faa, #a8e063aa)", bottom: "radial-gradient(circle, #3ca55caa, #b5ac49aa)" },
+  {
+    top: "radial-gradient(circle, #61dafbaa, #20232a66)",
+    bottom: "radial-gradient(circle, #282c34aa, #61dafbaa)",
+  },
+  {
+    top: "radial-gradient(circle, #d53369aa, #cbad6daa)",
+    bottom: "radial-gradient(circle, #f6d365aa, #fda085aa)",
+  },
+  {
+    top: "radial-gradient(circle, #56ab2faa, #a8e063aa)",
+    bottom: "radial-gradient(circle, #3ca55caa, #b5ac49aa)",
+  },
   { top: "radial-gradient(circle, #434343aa, #000a)", bottom: "radial-gradient(circle, #2c3e50aa, #000a)" },
   { top: "radial-gradient(circle, #f96a, #ff5e62aa)", bottom: "radial-gradient(circle, #7f00ffaa, #e100ffaa)" },
 ];
@@ -134,6 +161,49 @@ type GroupProps = {
 function Group({ group, sectionIndex }: GroupProps) {
   const indicesForSection = SECTION_GLOW_INDICES[sectionIndex] ?? [];
 
+  // ===== Animación entrada 1x1 (como value-grid) =====
+  const prefersReducedMotion = useReducedMotion();
+  const EASE = React.useMemo(() => cubicBezier(0.2, 0.8, 0.2, 1), []);
+
+  const listVariants = React.useMemo<Variants>(() => {
+    if (prefersReducedMotion) {
+      return {
+        hidden: {},
+        show: { transition: { delayChildren: 0.08, staggerChildren: 0.08 } },
+      };
+    }
+    return {
+      hidden: {},
+      show: {
+        transition: {
+          delayChildren: 0.26, // 👈 delay notorio al entrar a la sección
+          staggerChildren: 0.14,
+        },
+      },
+    };
+  }, [prefersReducedMotion]);
+
+  const itemVariants = React.useMemo<Variants>(() => {
+    if (prefersReducedMotion) {
+      return {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { duration: 0.2, ease: "linear" } },
+      };
+    }
+    return {
+      hidden: { opacity: 0, y: 18, scale: 0.985, filter: "blur(6px)" },
+      show: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: "blur(0px)",
+        transition: { duration: 0.6, ease: EASE },
+      },
+    };
+  }, [EASE, prefersReducedMotion]);
+
+  const viewport = React.useMemo(() => ({ once: true, amount: 0.28 }), []);
+
   return (
     <section
       className={cn(
@@ -151,7 +221,7 @@ function Group({ group, sectionIndex }: GroupProps) {
         </Heading>
       )}
 
-      <ul
+      <motion.ul
         role="list"
         className={cn(
           // ✅ WINDOWS/DESKTOP: GRID EXACTO como antes
@@ -167,15 +237,20 @@ function Group({ group, sectionIndex }: GroupProps) {
           // no bloquea scroll vertical
           "overscroll-x-contain"
         )}
+        variants={listVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewport}
       >
         {group.items.map((item, idx) => {
           const glowIdx = indicesForSection[idx] ?? 0;
           const glowScheme = GLOW_SCHEMES[glowIdx];
 
           return (
-            <li
+            <motion.li
               key={`${item.label}-${idx}`}
               role="listitem"
+              variants={itemVariants}
               className={cn(
                 // ✅ Mobile/tablet: SIEMPRE cuadrado
                 "shrink-0 snap-start aspect-square",
@@ -185,10 +260,10 @@ function Group({ group, sectionIndex }: GroupProps) {
               )}
             >
               <Card item={item as StackGridItemWithDesc} glowScheme={glowScheme} />
-            </li>
+            </motion.li>
           );
         })}
-      </ul>
+      </motion.ul>
     </section>
   );
 }
@@ -212,7 +287,11 @@ export default function StackGrid({ groups }: StackGridProps) {
             "overflow-hidden"
           )}
         >
-          <Group key={firstGroup.title ?? "group-0"} group={firstGroup} sectionIndex={0} />
+          <Group
+            key={firstGroup.title ?? "group-0"}
+            group={firstGroup}
+            sectionIndex={0}
+          />
         </Container>
       )}
 
@@ -225,7 +304,11 @@ export default function StackGrid({ groups }: StackGridProps) {
             "overflow-hidden"
           )}
         >
-          <Group key={secondGroup.title ?? "group-1"} group={secondGroup} sectionIndex={1} />
+          <Group
+            key={secondGroup.title ?? "group-1"}
+            group={secondGroup}
+            sectionIndex={1}
+          />
         </Container>
       )}
 
@@ -238,7 +321,11 @@ export default function StackGrid({ groups }: StackGridProps) {
             "overflow-hidden"
           )}
         >
-          <Group key={thirdGroup.title ?? "group-2"} group={thirdGroup} sectionIndex={2} />
+          <Group
+            key={thirdGroup.title ?? "group-2"}
+            group={thirdGroup}
+            sectionIndex={2}
+          />
         </Container>
       )}
     </div>
