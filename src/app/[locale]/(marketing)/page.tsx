@@ -77,6 +77,8 @@ export default async function Page({ params }: Params) {
     switch (block.kind) {
 
       
+      case "hero":
+        return <Hero {...(block as any).props} />;
       case "studioIntro":
         return <StudioIntro {...(block as any).props} />;
       case "capabilities":
@@ -87,6 +89,9 @@ export default async function Page({ params }: Params) {
         return <BigStatement {...(block as any).props} />;
 
         
+      case "interactive-3d":
+        return <Interactive3D {...(block as any).props} />;
+
       case "value-grid":
         return <ValueGrid {...(block as any).props} />;
       case "stack-grid":

@@ -71,10 +71,10 @@ export default function NavLink({
         "relative inline-flex items-center justify-center",
         // 🔹 menos alto el contenedor
         "px-2.5 md:px-3 py-0.5 md:py-0.5 rounded-full text-sm md:text-sm",
-        "text-[var(--text-muted)] hover:text-[var(--text)]",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+        "text-(--text-muted) hover:text-(--text)",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-(--ring)",
         "transition-colors",
-        "data-[active=true]:text-[var(--text)]", // solo color para activo
+        "data-[active=true]:text-(--text)", // solo color para activo
         className,
       )}
     >

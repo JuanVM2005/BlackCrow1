@@ -256,7 +256,7 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
                   className={cn(
                     "pointer-events-auto",
                     "mt-3",
-                    "rounded-(--radius-2xl)",
+                    "rounded-2xl",
                     "border border-(--border)",
                     "bg-(--surface) text-(--text)",
                     "shadow-(--shadow-xl)",
@@ -311,7 +311,7 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
                               }}
                               className={cn(
                                 "block",
-                                "rounded-(--radius-lg)",
+                                "rounded-lg",
                                 "px-1 py-1",
                                 "transition-colors duration-200",
                                 "hover:text-(--pink-500)",
