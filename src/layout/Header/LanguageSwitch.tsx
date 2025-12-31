@@ -15,7 +15,7 @@ type Locale = "es" | "en";
 
 function detectLocaleFromPath(pathname: string): Locale {
   const first = pathname.split("/").filter(Boolean)[0]?.toLowerCase();
-  return (first === "en" ? "en" : "es") as Locale;
+  return first === "en" ? "en" : "es";
 }
 
 function mapHash(hash: string, from: Locale, to: Locale): string {
@@ -33,8 +33,38 @@ function mapHash(hash: string, from: Locale, to: Locale): string {
     },
   };
   const normalized = hash.toLowerCase();
-  const mapped = map[from][normalized] ?? hash;
-  return mapped;
+  return map[from][normalized] ?? hash;
+}
+
+/**
+ * Normaliza slugs semánticos por idioma (contact/contacto).
+ * Esto evita caer en rutas inválidas como /en/contacto o /es/contact.
+ */
+function mapSemanticSlug({
+  locale,
+  nextLocale,
+  segs,
+}: {
+  locale: Locale;
+  nextLocale: Locale;
+  segs: string[];
+}): string[] {
+  // segs = ["es", "contact"] o ["en", "contacto"] etc.
+  const slug = segs[1];
+
+  if (!slug) return segs;
+
+  // ES -> EN
+  if (locale === "es" && nextLocale === "en") {
+    if (slug === "contacto") segs[1] = "contact";
+  }
+
+  // EN -> ES
+  if (locale === "en" && nextLocale === "es") {
+    if (slug === "contact") segs[1] = "contacto";
+  }
+
+  return segs;
 }
 
 function buildAltHref(
@@ -42,7 +72,7 @@ function buildAltHref(
   search: string,
   hash: string,
 ): { href: string; current: Locale; alt: Locale } {
-  const segs = pathname.split("/").filter(Boolean);
+  const segsRaw = pathname.split("/").filter(Boolean);
   const current = detectLocaleFromPath(pathname);
   const alt: Locale = current === "es" ? "en" : "es";
 
@@ -53,13 +83,13 @@ function buildAltHref(
 
   let destPath: string;
 
-  if (segs[0] === current && segs[1] === svcSegCurrent) {
+  if (segsRaw[0] === current && segsRaw[1] === svcSegCurrent) {
     // Índice /[locale]/servicios | /[locale]/services
-    if (segs.length === 2) {
+    if (segsRaw.length === 2) {
       destPath = `/${alt}/${svcSegAlt}`;
     } else {
       // Detalle /[locale]/servicios/[slug]
-      const slug = segs[2];
+      const slug = segsRaw[2];
       const key = resolveServiceKeyFromSlug(current, slug);
       if (key) {
         const altSlug = serviceSlugByLocale[alt][key];
@@ -68,9 +98,18 @@ function buildAltHref(
         destPath = `/${alt}/${svcSegAlt}`;
       }
     }
-  } else if (segs[0] === current) {
-    // Cualquier ruta con prefijo locale → sólo cambiar el prefijo
-    destPath = "/" + [alt, ...segs.slice(1)].join("/");
+  } else if (segsRaw[0] === current) {
+    // Cualquier ruta con prefijo locale → cambiar prefijo
+    const segs = [alt, ...segsRaw.slice(1)];
+
+    // ✅ Corrige slugs semánticos (contact/contacto)
+    const normalized = mapSemanticSlug({
+      locale: current,
+      nextLocale: alt,
+      segs,
+    });
+
+    destPath = "/" + normalized.join("/");
   } else {
     // Sin prefijo (no debería pasar por el middleware, pero por si acaso)
     destPath = localeBasePath(alt);
@@ -94,7 +133,7 @@ export default function LanguageSwitch({ className }: { className?: string }) {
     return () => window.removeEventListener("hashchange", read);
   }, []);
 
-  const { href, current, alt } = React.useMemo(
+  const { href, current } = React.useMemo(
     () => buildAltHref(pathname, search, hash),
     [pathname, search, hash],
   );
@@ -129,10 +168,7 @@ export default function LanguageSwitch({ className }: { className?: string }) {
       </span>
 
       {/* Separador fino */}
-      <span
-        aria-hidden
-        className="w-px h-4 my-1 bg-[color:var(--border)]"
-      />
+      <span aria-hidden className="my-1 h-4 w-px bg-[color:var(--border)]" />
 
       {/* Botón EN */}
       <span

@@ -3,17 +3,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * i18n strict:
+ * i18n strict + semantic slugs:
+ * - /es/contact  -> /es/contacto
+ * - /en/contacto -> /en/contact
  * - Sin prefijo de locale → redirige a HOME del preferido (/es|/en).
- * - Con /es|/en → deja pasar (normaliza mayúsculas y variantes /es-PE → /es).
  */
 
 const LOCALES = new Set(["es", "en"]);
 const DEFAULT_LOCALE = "es";
 
-/** Determina si la ruta debe saltarse el middleware (estáticos, APIs, OG images, archivos con extensión, etc.) */
+/** Determina si la ruta debe saltarse el middleware */
 function shouldSkip(pathname: string): boolean {
-  // 1) Prefijos técnicos
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -22,7 +22,6 @@ function shouldSkip(pathname: string): boolean {
     return true;
   }
 
-  // 2) Endpoints especiales sin extensión (OG/preview)
   if (
     pathname.endsWith("/opengraph-image") ||
     pathname.endsWith("/twitter-image")
@@ -30,10 +29,8 @@ function shouldSkip(pathname: string): boolean {
     return true;
   }
 
-  // 3) Archivos con extensión (incluye .xml/.txt/.json/.png/.webp/.glb, etc.)
   if (/\.[a-z0-9]+$/i.test(pathname)) return true;
 
-  // 4) Casos públicos comunes
   if (
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
@@ -61,75 +58,81 @@ export function middleware(req: NextRequest) {
   if (pathname === "/") {
     const preferred = getPreferredLocale(req);
     url.pathname = `/${preferred}`;
-    url.search = search; // conserva query
+    url.search = search;
     const res = NextResponse.redirect(url, 308);
-    // recordar preferencia
     res.cookies.set("NEXT_LOCALE", preferred, { path: "/" });
     res.headers.set("X-Redirect-By", "middleware");
     return res;
   }
 
-  // 2) ¿Trae algo parecido a un locale?
   const segs = pathname.split("/").filter(Boolean);
   const firstRaw = segs[0] ?? "";
   const firstLower = firstRaw.toLowerCase();
 
-  // 2a) /ES → /es (solo case)
+  // 2a) /ES → /es
   if (LOCALES.has(firstLower) && firstRaw !== firstLower) {
     segs[0] = firstLower;
-    url.pathname = "/" + segs.join("/") + (pathname.endsWith("/") ? "/" : "");
+    url.pathname = "/" + segs.join("/");
     url.search = search;
-    const res = NextResponse.redirect(url, 308);
-    res.headers.set("X-Redirect-By", "middleware");
-    return res;
+    return NextResponse.redirect(url, 308);
   }
 
-  // 2b) /es-PE o /en-US → normaliza a /es | /en
+  // 2b) /es-PE o /en-US → /es | /en
   const localeVariantMatch = /^([A-Za-z]{2})(-[A-Za-z]{2})?$/.test(firstRaw);
   if (!LOCALES.has(firstLower) && localeVariantMatch) {
     const base = firstLower.split("-")[0];
     const normalized = LOCALES.has(base) ? base : DEFAULT_LOCALE;
     segs[0] = normalized;
-    url.pathname = "/" + segs.join("/") + (pathname.endsWith("/") ? "/" : "");
+    url.pathname = "/" + segs.join("/");
     url.search = search;
     const res = NextResponse.redirect(url, 308);
     res.cookies.set("NEXT_LOCALE", normalized, { path: "/" });
-    res.headers.set("X-Redirect-By", "middleware");
     return res;
   }
 
-  // 2c) Ya trae locale válido → dejar pasar sin alias legacy
+  // 2c) Ya trae locale válido → aplicar slugs semánticos
   if (LOCALES.has(firstLower)) {
+    const locale = firstLower;
+    const slug = segs[1];
+
+    // ❌ /es/contact → /es/contacto
+    if (locale === "es" && slug === "contact") {
+      segs[1] = "contacto";
+      url.pathname = "/" + segs.join("/");
+      url.search = search;
+      return NextResponse.redirect(url, 308);
+    }
+
+    // ❌ /en/contacto → /en/contact
+    if (locale === "en" && slug === "contacto") {
+      segs[1] = "contact";
+      url.pathname = "/" + segs.join("/");
+      url.search = search;
+      return NextResponse.redirect(url, 308);
+    }
+
+    // ✅ locale válido + slug correcto
     return NextResponse.next();
   }
 
-  // 3) Sin prefijo de locale → HOME del preferido (NO conserves path)
+  // 3) Sin prefijo de locale → HOME del preferido
   const preferred = getPreferredLocale(req);
   url.pathname = `/${preferred}`;
-  url.search = search; // conserva query por cortesía
+  url.search = search;
   const res = NextResponse.redirect(url, 308);
   res.cookies.set("NEXT_LOCALE", preferred, { path: "/" });
   res.headers.set("X-Redirect-By", "middleware");
   return res;
 }
 
-/**
- * Locale preferido:
- * - Primero cookie NEXT_LOCALE.
- * - Si no hay, usa DEFAULT_LOCALE (es).
- *
- * Ignoramos Accept-Language para que el comportamiento sea determinista.
- */
 function getPreferredLocale(req: NextRequest): "es" | "en" {
   const cookie = req.cookies.get("NEXT_LOCALE")?.value?.toLowerCase();
-  if (cookie === "es" || cookie === "en") return cookie as "es" | "en";
-  return DEFAULT_LOCALE as "es";
+  if (cookie === "es" || cookie === "en") return cookie;
+  return DEFAULT_LOCALE;
 }
 
-// Matcher: excluye assets/estáticos principales en el edge; el resto se filtra en runtime con `shouldSkip`.
 export const config = {
   matcher: [
-    // No ejecutar en API ni en estáticos de Next; tampoco en archivos bien conocidos.
     "/((?!api|_next/static|_next/image|_vercel|favicon.ico|robots.txt|sitemap.xml|manifest.json|icon.png|apple-icon.png|opengraph-image|twitter-image).*)",
   ],
 };

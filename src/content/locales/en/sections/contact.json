@@ -1,0 +1,51 @@
+{
+  "id": "contact",
+  "mark": {
+    "src": "/icons/BlackCrow/IconBCWhite.svg",
+    "alt": "Black Crow"
+  },
+  "heading": "Hello@BlackCrow.agency",
+  "description": "",
+  "form": {
+    "action": {
+      "url": "/api/contact",
+      "method": "POST"
+    },
+    "fields": {
+      "firstName": {
+        "label": "First name",
+        "placeholder": ""
+      },
+      "lastName": {
+        "label": "Last name",
+        "placeholder": ""
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": ""
+      },
+      "message": {
+        "label": "Message",
+        "placeholder": ""
+      }
+    },
+    "consent": {
+      "newsletter": {
+        "label": "I’d like to receive Black Crow’s monthly newsletter.",
+        "defaultChecked": false
+      },
+      "privacy": {
+        "label": "I agree to the Privacy Policy and secure use of my data." ,        "href": "/privacy",
+        "defaultChecked": false,
+        "required": true
+      }
+    },
+    "submitLabel": "Send",
+    "feedback": {
+      "successTitle": "Sent",
+      "successMessage": "Thank you. We’ll get back to you soon.",
+      "errorTitle": "Couldn’t send",
+      "errorMessage": "Please try again in a few minutes."
+    }
+  }
+}

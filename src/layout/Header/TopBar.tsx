@@ -4,6 +4,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import Container from "@/ui/Container";
 import Button, { ButtonArrow } from "@/ui/Button";
 import { site } from "@/config/site";
@@ -55,7 +56,9 @@ export default function TopBar({
     };
 
     try {
-      const w = window as Window & { dataLayer?: Array<Record<string, unknown>> };
+      const w = window as Window & {
+        dataLayer?: Array<Record<string, unknown>>;
+      };
       w.dataLayer?.push(payload);
     } catch {}
 
@@ -93,7 +96,7 @@ export default function TopBar({
     <div
       className={cn(
         "sticky top-0 z-(--z-header)",
-        onServicesDark ? "text-(--text-inverse)" : "text-(--text)"
+        onServicesDark ? "text-(--text-inverse)" : "text-(--text)",
       )}
     >
       <Container className="flex items-center justify-between gap-3 h-(--header-h)">
@@ -103,7 +106,7 @@ export default function TopBar({
           aria-label={brand}
           className={cn(
             "inline-flex items-center gap-2 transition-colors duration-200",
-            "hover:text-(--pink-500)"
+            "hover:text-(--pink-500)",
           )}
         >
           <span className="text-lg md:text-xl font-semibold tracking-tight leading-none">
@@ -111,18 +114,25 @@ export default function TopBar({
           </span>
         </Link>
 
-        {/* ACCIONES: SOLO DESDE md (para que en mobile solo exista en el menubar) */}
+        {/* ACCIONES: SOLO DESDE md */}
         <div className="hidden md:flex items-center gap-3">
           <LanguageSwitch />
 
-          {/* CTA SIN BORDE + HOVER ROSADO */}
+          {/* CTA: fondo negro sólido (NO transparente); borde finito cambia; hover rosado se mantiene */}
           <Button
             asChild
             variant="solid"
             size="md"
             className={cn(
-              "border-none shadow-none transition-colors duration-200",
-              "hover:bg-(--pink-500)"
+              "border shadow-none transition-[background-color,border-color,transform,opacity] duration-200",
+              // fondo negro sólido
+              "bg-black",
+              // borde finito base
+              "border-[rgba(255,255,255,0.18)]",
+              // hover rosado (mantener) + borde un poco más visible
+              "hover:bg-(--pink-500) hover:border-[rgba(255,255,255,0.28)]",
+              // active
+              "active:scale-[0.98]",
             )}
           >
             <Link

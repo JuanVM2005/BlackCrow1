@@ -3,10 +3,6 @@
 import { EMAIL_FROM } from "@/server/config/env";
 import type { EmailMessage } from "@/server/adapters/email";
 
-/**
- * Payload de dominio mínimo que usamos en plantillas de contacto.
- * Debe ser compatible con lo que construye `toDomainPayload`.
- */
 type ContactDomainPayload = {
   fullName: string;
   email: string;
@@ -16,9 +12,21 @@ type ContactDomainPayload = {
   newsletterOptIn: boolean;
 };
 
-/**
- * Construye la auto-respuesta para la persona que escribió.
- */
+function formatServiceLabel(
+  locale: "es" | "en",
+  serviceKey: string,
+): string | null {
+  if (!serviceKey) return null;
+
+  // Contacto general (formulario /contacto)
+  if (serviceKey === "contact" || serviceKey === "general") {
+    return locale === "es" ? "Contacto general" : "General contact";
+  }
+
+  // Si llega desde servicios (por ejemplo landing/website/ecommerce/custom)
+  return serviceKey;
+}
+
 export function buildContactAutoReplyEmail(
   payload: ContactDomainPayload,
 ): EmailMessage {
@@ -34,6 +42,8 @@ export function buildContactAutoReplyEmail(
       ? `Hola ${fullName || ""}`.trim()
       : `Hi ${fullName || ""}`.trim();
 
+  const serviceLabel = formatServiceLabel(locale, serviceKey);
+
   const bodyLines =
     locale === "es"
       ? [
@@ -41,8 +51,7 @@ export function buildContactAutoReplyEmail(
           "",
           "Gracias por escribir a Black Crow. Hemos recibido tu mensaje y te responderemos muy pronto.",
           "",
-          `Servicio seleccionado: ${serviceKey}`,
-          "",
+          ...(serviceLabel ? [`Tipo de consulta: ${serviceLabel}`, ""] : []),
           "Si necesitas añadir más detalles, puedes responder a este mismo correo.",
         ]
       : [
@@ -50,8 +59,7 @@ export function buildContactAutoReplyEmail(
           "",
           "Thanks for reaching out to Black Crow. We've received your message and will reply as soon as possible.",
           "",
-          `Selected service: ${serviceKey}`,
-          "",
+          ...(serviceLabel ? [`Inquiry type: ${serviceLabel}`, ""] : []),
           "If you need to add more details, just reply to this email.",
         ];
 
@@ -61,7 +69,7 @@ export function buildContactAutoReplyEmail(
     .map((line) =>
       line === ""
         ? "<br />"
-        : `<p>${line.replace(/\n/g, "<br />").replace(/</g, "&lt;")}</p>`
+        : `<p>${line.replace(/\n/g, "<br />").replace(/</g, "&lt;")}</p>`,
     )
     .join("");
 

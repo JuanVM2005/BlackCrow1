@@ -1,8 +1,8 @@
 // src/layout/Footer/index.tsx
 import * as React from "react";
-import Link from "next/link";
 import Container from "@/ui/Container";
 import { loadFooter, type FooterProps } from "./footer.mapper";
+import FooterLinkClient, { type FooterLinkIntent } from "./FooterLink.client";
 
 type Surface = "base" | "inverse";
 
@@ -11,17 +11,8 @@ type Props = {
   surface?: Surface;
 };
 
-/** ¿es URL absoluta externa? */
 function isExternalUrl(href?: string) {
   return !!href && /^https?:\/\//i.test(href);
-}
-
-/** Prefija el locale a rutas internas; mantiene URLs absolutas tal cual. */
-function withLocale(locale: string, href?: string) {
-  if (!href) return `/${locale}`;
-  if (isExternalUrl(href)) return href;
-  const safe = href.startsWith("/") ? href : `/${href}`;
-  return `/${locale}${safe}`;
 }
 
 /**
@@ -33,7 +24,7 @@ export default function Footer(props: Partial<Props>) {
   const surface = props.surface ?? "base";
 
   if (typeof window !== "undefined") {
-    const locale = props.locale ?? "es";
+    const locale = (props.locale ?? "es") as "es" | "en";
     const minimal: FooterProps = {
       ariaLabel: "Footer",
       divider: false,
@@ -44,13 +35,23 @@ export default function Footer(props: Partial<Props>) {
     return <FooterView {...minimal} locale={locale} surface={surface} />;
   }
 
-  return <FooterServer locale={props.locale ?? "es"} surface={surface} />;
+  return <FooterServer locale={(props.locale ?? "es") as "es" | "en"} surface={surface} />;
 }
 
 // Server subcomponent async (carga contenido real)
-async function FooterServer({ locale, surface }: Props) {
+async function FooterServer({ locale, surface }: { locale: "es" | "en"; surface: Surface }) {
   const data = await loadFooter(locale);
   return <FooterView {...data} locale={locale} surface={surface} />;
+}
+
+function intentFromMenuItem(label: string): FooterLinkIntent {
+  const v = label.trim().toLowerCase();
+
+  if (v === "home" || v === "inicio") return "home";
+  if (v === "pricing" || v === "precios") return "pricing";
+  if (v === "contact" || v === "contacto") return "contact";
+
+  return "none";
 }
 
 /** Vista pura (testable) */
@@ -61,17 +62,12 @@ function FooterView({
   legal,
   locale,
   surface = "base",
-}: FooterProps & { locale: string; surface?: Surface }) {
+}: FooterProps & { locale: "es" | "en"; surface?: Surface }) {
   const isInverse = surface === "inverse";
 
-  // Logo 100% controlado por el tema (surface)
-  const logoSrc = isInverse
-    ? "/logos/brand-mark-light.svg"
-    : "/logos/brand-mark.svg";
+  const logoSrc = isInverse ? "/logos/brand-mark-light.svg" : "/logos/brand-mark.svg";
 
-  const ringOffset = isInverse
-    ? "ring-offset-(--neutral-1000)"
-    : "ring-offset-(--neutral-50)";
+  const ringOffset = isInverse ? "ring-offset-(--neutral-1000)" : "ring-offset-(--neutral-50)";
 
   return (
     <footer
@@ -84,7 +80,6 @@ function FooterView({
         "text-(--text)",
       ].join(" ")}
     >
-      {/* Divider superior con fade en extremos (diseño original) */}
       {divider && (
         <div aria-hidden className="w-full">
           <div
@@ -99,7 +94,6 @@ function FooterView({
 
       <Container className="py-12 md:py-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
-          {/* Columna 0: Solo Logo (sin texto) */}
           <div className="flex flex-col items-start gap-3 md:gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -111,24 +105,30 @@ function FooterView({
             />
           </div>
 
-          {/* Columnas de navegación/contenido (diseño original) */}
           {columns.map((col) => (
             <nav key={col.title} aria-label={col.title} className="space-y-3">
               <h3 className="font-semibold">{col.title}</h3>
+
               <ul className="space-y-3">
                 {col.items.map((item) => {
                   const externalFlag =
                     (item as any).isExternal === true || isExternalUrl(item.href);
-                  const href = withLocale(locale, item.href);
-                  const rel = externalFlag ? "noreferrer" : undefined;
-                  const target = externalFlag ? "_blank" : undefined;
+
+                  // ✅ YA VIENE LOCALIZADO DESDE mapFooter()
+                  const href = item.href;
+
+                  // Solo aplicamos “intents” en el bloque Menu
+                  const isMenu = col.title.trim().toLowerCase() === "menu" || col.title.trim().toLowerCase() === "menú";
+                  const intent: FooterLinkIntent = isMenu ? intentFromMenuItem(item.label) : "none";
 
                   return (
                     <li key={`${col.title}-${item.label}`}>
-                      <Link
+                      <FooterLinkClient
                         href={href}
-                        target={target}
-                        rel={rel}
+                        label={item.label}
+                        locale={locale}
+                        intent={intent}
+                        external={externalFlag}
                         className={[
                           "relative inline-flex items-center gap-2",
                           "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
@@ -141,10 +141,8 @@ function FooterView({
                         ].join(" ")}
                       >
                         {item.label}
-                        {externalFlag && (
-                          <span className="sr-only">(abre en nueva pestaña)</span>
-                        )}
-                      </Link>
+                        {externalFlag && <span className="sr-only">(abre en nueva pestaña)</span>}
+                      </FooterLinkClient>
                     </li>
                   );
                 })}
@@ -153,28 +151,25 @@ function FooterView({
           ))}
         </div>
 
-        {/* Legal opcional (diseño original) */}
         {legal?.copyright && (
           <div className="mt-10 pt-6 border-t border-(--neutral-300)">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <p className="text-(--text-muted,inherit)">
-                {replaceYear(legal.copyright)}
-              </p>
+              <p className="text-(--text-muted,inherit)">{replaceYear(legal.copyright)}</p>
 
               {legal.links && legal.links.length > 0 && (
                 <ul className="flex flex-wrap gap-x-6 gap-y-2">
                   {legal.links.map((l) => {
                     const external = isExternalUrl(l.href);
-                    const href = withLocale(locale, l.href);
-                    const rel = external ? "noreferrer" : undefined;
-                    const target = external ? "_blank" : undefined;
+                    const href = l.href;
 
                     return (
                       <li key={l.label}>
-                        <Link
+                        <FooterLinkClient
                           href={href}
-                          target={target}
-                          rel={rel}
+                          label={l.label}
+                          locale={locale}
+                          external={external}
+                          intent="none"
                           className={[
                             "relative inline-flex items-center",
                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
@@ -187,10 +182,8 @@ function FooterView({
                           ].join(" ")}
                         >
                           {l.label}
-                          {external && (
-                            <span className="sr-only">(abre en nueva pestaña)</span>
-                          )}
-                        </Link>
+                          {external && <span className="sr-only">(abre en nueva pestaña)</span>}
+                        </FooterLinkClient>
                       </li>
                     );
                   })}
@@ -201,16 +194,11 @@ function FooterView({
         )}
       </Container>
 
-      {/* Línea inferior del footer (diseño original) */}
-      <div
-        aria-hidden
-        className="mt-4 mb-10 border-t border-(--neutral-300) opacity-40"
-      />
+      <div aria-hidden className="mt-4 mb-10 border-t border-(--neutral-300) opacity-40" />
     </footer>
   );
 }
 
-/** Reemplaza {year} por el año actual dentro del string del JSON. */
 function replaceYear(template: string) {
   return template.replace(/\{year\}/g, String(new Date().getFullYear()));
 }

@@ -3,10 +3,6 @@
 import { EMAIL_FROM, EMAIL_TO_CONTACT } from "@/server/config/env";
 import type { EmailMessage } from "@/server/adapters/email";
 
-/**
- * Payload de dominio mínimo que usamos en plantillas de contacto.
- * Debe ser compatible con lo que construye `toDomainPayload`.
- */
 type ContactDomainPayload = {
   fullName: string;
   email: string;
@@ -16,32 +12,52 @@ type ContactDomainPayload = {
   newsletterOptIn: boolean;
 };
 
-/**
- * Construye el email que te llega a ti (owner).
- * Aquí concentramos todo el copy y estructura de mensaje.
- */
-export function buildContactOwnerEmail(
-  payload: ContactDomainPayload,
-): EmailMessage {
-  const { fullName, email, message, serviceKey, locale, newsletterOptIn } =
-    payload;
+function formatServiceLabel(
+  locale: "es" | "en",
+  serviceKey: string,
+): { subjectTag: string; serviceLine: string; sourceLine: string } {
+  // Contacto general
+  if (serviceKey === "contact" || serviceKey === "general" || !serviceKey) {
+    return {
+      subjectTag: locale === "es" ? "Contacto" : "Contact",
+      serviceLine: locale === "es" ? "Tipo: Contacto general" : "Type: General contact",
+      sourceLine:
+        locale === "es"
+          ? "Tienes un nuevo mensaje desde el formulario de contacto:"
+          : "You have a new message from the contact form:",
+    };
+  }
+
+  // Formularios de servicios
+  return {
+    subjectTag: serviceKey,
+    serviceLine: locale === "es" ? `Servicio: ${serviceKey}` : `Service: ${serviceKey}`,
+    sourceLine:
+      locale === "es"
+        ? "Tienes un nuevo mensaje desde el formulario de servicios:"
+        : "You have a new message from the services form:",
+  };
+}
+
+export function buildContactOwnerEmail(payload: ContactDomainPayload): EmailMessage {
+  const { fullName, email, message, serviceKey, locale, newsletterOptIn } = payload;
+
+  const meta = formatServiceLabel(locale, serviceKey);
 
   const subject =
     locale === "es"
-      ? `Nuevo contacto (${serviceKey})`
-      : `New contact (${serviceKey})`;
+      ? `Nuevo mensaje — ${meta.subjectTag}`
+      : `New message — ${meta.subjectTag}`;
 
   const textLines = [
-    locale === "es"
-      ? "Tienes un nuevo mensaje desde el formulario de servicios:"
-      : "You have a new message from the services form:",
+    meta.sourceLine,
     "",
-    `Nombre: ${fullName}`,
+    `${locale === "es" ? "Nombre" : "Name"}: ${fullName}`,
     `Email: ${email}`,
-    `Servicio: ${serviceKey}`,
-    `Newsletter: ${newsletterOptIn ? "sí" : "no"}`,
+    meta.serviceLine,
+    `${locale === "es" ? "Novedades" : "Newsletter"}: ${newsletterOptIn ? (locale === "es" ? "sí" : "yes") : (locale === "es" ? "no" : "no")}`,
     "",
-    "Mensaje:",
+    locale === "es" ? "Mensaje:" : "Message:",
     message,
   ];
 
@@ -51,7 +67,7 @@ export function buildContactOwnerEmail(
     .map((line) =>
       line === ""
         ? "<br />"
-        : `<p>${line.replace(/\n/g, "<br />").replace(/</g, "&lt;")}</p>`
+        : `<p>${line.replace(/\n/g, "<br />").replace(/</g, "&lt;")}</p>`,
     )
     .join("");
 

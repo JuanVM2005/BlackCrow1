@@ -13,6 +13,10 @@ type LayoutParams = {
  * - Fondo surface-inverse (tema negro)
  * - Compensa la altura del header fijo
  * - Incluye Footer en modo inverse
+ *
+ * Además:
+ * - Forzamos que cualquier <main> interno NO pinte background sólido (para no tapar el arte).
+ * - Ajustamos CornerCut SOLO en mobile SIN tocar globals.css, vía CSS vars “scoped” a este layout.
  */
 export default async function ServiciosLayout({
   children,
@@ -27,7 +31,24 @@ export default async function ServiciosLayout({
   return (
     <div
       data-surface="inverse"
-      className="surface-inverse relative -mt-(--header-h) pt-(--header-h) min-h-screen"
+      className={[
+        // base layout
+        "surface-inverse relative -mt-(--header-h) pt-(--header-h) min-h-screen",
+
+        // evita el “bloque” que a veces viene en <main ... bg-...>
+        "[&_main]:bg-transparent",
+
+        // ===== CornerCut tuning (scoped) =====
+        // Desktop/tablet (default)
+        "[--fx-cut-size:calc(var(--header-h)*9)]",
+        "[--fx-cut-res:0.8]",
+        "[--fx-cut-clip:polygon(14%_0,100%_0,100%_74%)]",
+
+        // Mobile: más pequeño + menos “fill-rate”
+        "max-sm:[--fx-cut-size:calc(var(--header-h)*5.7)]",
+        "max-sm:[--fx-cut-res:0.58]",
+        "max-sm:[--fx-cut-clip:polygon(20%_0,100%_0,100%_66%)]",
+      ].join(" ")}
     >
       {/* Corte anclado arriba del todo (por detrás del contenido) */}
       <div
@@ -38,12 +59,10 @@ export default async function ServiciosLayout({
         <CornerCut strategy="absolute" align="top-right" />
       </div>
 
-      {/* Contenido de la página de servicios */}
-      <div className="relative z-1">
-        {children}
-      </div>
+      {/* Contenido */}
+      <div className="relative z-1">{children}</div>
 
-      {/* Footer en tema negro (surface inverse) */}
+      {/* Footer en tema inverse */}
       <Footer locale={locale} surface="inverse" />
     </div>
   );

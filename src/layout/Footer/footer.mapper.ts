@@ -1,3 +1,4 @@
+// src/layout/Footer/footer.mapper.ts
 import { footerSchema, type FooterContent } from "@/content/schemas/footer.schema";
 
 /** Helpers de enlace */
@@ -33,6 +34,28 @@ export type FooterProps = {
   legal?: FooterContent["legal"];
 };
 
+/** Helper: construye FooterLink con tipos EXACTOS (target="_blank") */
+function toFooterLink(item: { label: string; href: string }, locale: string): FooterLink {
+  const href = localizeHref(item.href, locale);
+  const external = isExternal(href);
+
+  if (!external) {
+    return {
+      label: item.label,
+      href,
+      isExternal: false,
+    };
+  }
+
+  return {
+    label: item.label,
+    href,
+    isExternal: true,
+    target: "_blank",
+    rel: "noopener noreferrer",
+  };
+}
+
 /** Valida y normaliza el JSON crudo del footer */
 export function mapFooter(raw: unknown, locale: string): FooterProps {
   const parsed = footerSchema.parse(raw);
@@ -43,17 +66,9 @@ export function mapFooter(raw: unknown, locale: string): FooterProps {
     divider: parsed.divider ?? false,
     columns: parsed.columns.map((col) => ({
       title: col.title,
-      items: col.items.map((item) => {
-        const href = localizeHref(item.href, locale);
-        const external = isExternal(href);
-        return {
-          label: item.label,
-          href,
-          isExternal: external,
-          ...(external ? { target: "_blank", rel: "noopener noreferrer" as const } : {}),
-        };
-      }),
+      items: col.items.map((item) => toFooterLink(item, locale)),
     })),
+    // dejamos legal tal cual (si luego quieres, lo tipamos/normalizamos también)
     legal: parsed.legal,
   };
 }

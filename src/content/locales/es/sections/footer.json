@@ -11,8 +11,8 @@
       "title": "Menu",
       "items": [
         { "label": "Home", "href": "/" },
-        { "label": "Precios", "href": "/#precios" },
-        { "label": "Contacto", "href": "/#contacto" }
+        { "label": "Precios", "href": "/" },
+        { "label": "Contacto", "href": "/contacto" }
       ]
     },
     {

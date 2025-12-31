@@ -15,7 +15,11 @@ import websiteFormRaw from "@/content/locales/en/services/forms/website.json";
 import ecommerceFormRaw from "@/content/locales/en/services/forms/ecommerce.json";
 import customFormRaw from "@/content/locales/en/services/forms/custom.json";
 
-type Params = { locale: "es" | "en"; slug: "landing" | "website" | "ecommerce" | "custom" };
+type Params = {
+  locale: "es" | "en";
+  slug: "landing" | "website" | "ecommerce" | "custom";
+};
+
 type NavItem = { label: string; slug: string; order: number };
 type A11yJSON = { switcherLabel: string };
 
@@ -26,10 +30,8 @@ export default async function ServiceDetailLayout({
   children: ReactNode;
   params: Promise<Params>;
 }) {
-  // Next 15: params es Promise
   const { locale, slug } = await params;
 
-  // Items para el switcher (ordenados)
   const nav = (enNav as NavItem[]).slice().sort((a, b) => a.order - b.order);
   const switcherItems = nav.map((it) => ({
     label: it.label,
@@ -37,7 +39,6 @@ export default async function ServiceDetailLayout({
     href: `/${locale}/services/${it.slug}`,
   }));
 
-  // Parse estricto del form (schema minimal)
   let formData: ServiceFormJSON;
   switch (slug) {
     case "landing":
@@ -59,15 +60,13 @@ export default async function ServiceDetailLayout({
   const { switcherLabel } = a11y as A11yJSON;
 
   return (
-    <div className="section--dark">
-      <ServicePageFrame
-        switcherItems={switcherItems}
-        activeSlug={slug}
-        formData={formData}
-        switcherAriaLabel={switcherLabel}
-      >
-        {children}
-      </ServicePageFrame>
-    </div>
+    <ServicePageFrame
+      switcherItems={switcherItems}
+      activeSlug={slug}
+      formData={formData}
+      switcherAriaLabel={switcherLabel}
+    >
+      {children}
+    </ServicePageFrame>
   );
 }
