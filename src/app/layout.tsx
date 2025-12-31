@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import RootProviders from "@/layout/RootProviders";
 import Cursor from "@/ui/Cursor";
 import ScrollRail from "@/ui/ScrollRail";
+import { Analytics } from "@vercel/analytics/next";
 import "@/styles/globals.css";
 
 const manrope = Manrope({
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RootProviders>
           <Cursor />
           {children}
+          <Analytics />
         </RootProviders>
 
         {/* Overlay scrollbar — thumb rosa más ALTO (fijo en px) */}
