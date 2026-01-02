@@ -1,8 +1,5 @@
 // src/app/[locale]/(marketing)/opengraph-image.tsx
 import { ImageResponse } from "next/og";
-import esHome from "@/content/locales/es/pages/home.json";
-import enHome from "@/content/locales/en/pages/home.json";
-import { normalizeLocale } from "@/i18n/locales";
 
 // Ejecutar en Edge para menor TTFB
 export const runtime = "edge";
@@ -11,11 +8,11 @@ export const size = { width: 1200, height: 630 };
 
 type Locale = "es" | "en";
 
-type ContentPage = {
-  kind: "page";
-  sections: Array<{ kind: string; data: any }>;
-  meta?: { title?: string; description?: string; ogImage?: string };
-};
+/**
+ * ✅ Mantener bundle Edge < 1MB:
+ * - Sin imports internos (home.json / i18n helpers).
+ * - Copy mínimo inline para OG.
+ */
 
 /**
  * Snapshot mínimo de tokens para OG (la imagen no lee tu globals.css).
@@ -30,8 +27,10 @@ const THEME = {
   border: "#EAEAEA",
 } as const;
 
-function getHomeByLocale(locale: Locale): ContentPage {
-  return (locale === "en" ? enHome : esHome) as unknown as ContentPage;
+function normalizeLocale(raw?: string): Locale {
+  const v = (raw ?? "").toLowerCase();
+  if (v.startsWith("en")) return "en";
+  return "es";
 }
 
 // Utilidad simple para RGBA desde hex
@@ -47,6 +46,23 @@ function rgba(hex: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** Copy mínimo (solo lo necesario para OG) */
+const OG_COPY: Record<
+  Locale,
+  { kicker: string; headline: string; tagline: string }
+> = {
+  es: {
+    kicker: "AGENCIA CREATIVA & TECH",
+    headline: "Límites",
+    tagline: "UX/UI – Branding – Desarrollo Web",
+  },
+  en: {
+    kicker: "CREATIVE & TECH AGENCY",
+    headline: "Limits",
+    tagline: "UX/UI – Branding – Web Development",
+  },
+};
+
 export default async function Image({
   params,
 }: {
@@ -54,32 +70,9 @@ export default async function Image({
   params: Promise<{ locale: string }>;
 }) {
   const { locale: rawLocale } = await params;
-  const locale = normalizeLocale(rawLocale) as Locale;
+  const locale = normalizeLocale(rawLocale);
 
-  const page = getHomeByLocale(locale);
-
-  // Extrae textos del Hero si existe
-  const hero = page.sections.find((s) => s?.kind === "hero")?.data as
-    | {
-        kicker?: string;
-        headline?: string;
-        tagline?: string;
-      }
-    | undefined;
-
-  const kicker =
-    (hero?.kicker ??
-      (locale === "en"
-        ? "CREATIVE & TECH AGENCY"
-        : "AGENCIA CREATIVA & TECH"))?.toUpperCase() ?? "";
-
-  const headline = hero?.headline ?? (locale === "en" ? "Limits" : "Límites");
-
-  const tagline =
-    hero?.tagline ??
-    (locale === "en"
-      ? "UX/UI – Branding – Web Development"
-      : "UX/UI – Branding – Desarrollo Web");
+  const { kicker, headline, tagline } = OG_COPY[locale];
 
   return new ImageResponse(
     (
@@ -91,7 +84,6 @@ export default async function Image({
           position: "relative",
           background: THEME.surface,
           color: THEME.text,
-          // Sin font custom: usamos la default del runtime
         }}
       >
         {/* Decoración con gradientes suaves (alineadas a tu brand) */}
@@ -100,9 +92,18 @@ export default async function Image({
             position: "absolute",
             inset: 0,
             background: `
-              radial-gradient(800px 400px at 100% 0%, ${rgba(THEME.brand, 0.12)}, transparent),
-              radial-gradient(800px 400px at 100% 100%, ${rgba(THEME.brand, 0.10)}, transparent),
-              radial-gradient(700px 300px at 0% 50%, ${rgba(THEME.brandMuted, 0.35)}, transparent)
+              radial-gradient(800px 400px at 100% 0%, ${rgba(
+                THEME.brand,
+                0.12,
+              )}, transparent),
+              radial-gradient(800px 400px at 100% 100%, ${rgba(
+                THEME.brand,
+                0.10,
+              )}, transparent),
+              radial-gradient(700px 300px at 0% 50%, ${rgba(
+                THEME.brandMuted,
+                0.35,
+              )}, transparent)
             `,
           }}
         />
@@ -180,15 +181,6 @@ export default async function Image({
         </div>
       </div>
     ),
-    {
-      ...size,
-      // ✅ sin fonts
-    },
+    { ...size },
   );
 }
-
-/**
- * Notas:
- * - Proyecto mono-tema: LIGHT. Esta imagen usa un snapshot local (THEME).
- * - Si cambias tokens en src/styles/globals.css, sincroniza aquí los valores.
- */

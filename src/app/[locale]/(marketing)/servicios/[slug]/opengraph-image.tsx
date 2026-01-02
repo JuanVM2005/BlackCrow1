@@ -1,15 +1,5 @@
 // src/app/[locale]/(marketing)/servicios/[slug]/opengraph-image.tsx
 import { ImageResponse } from "next/og";
-import { normalizeLocale } from "@/i18n/locales";
-import {
-  resolveServiceKeyFromSlug,
-  serviceSlugByLocale,
-  type ServiceKey,
-} from "@/i18n/routing/static";
-import { site } from "@/config/site";
-
-import type { ServiceDetailJSON } from "@/content/schemas/serviceDetail.schema";
-import { parseServiceDetail } from "@/content/schemas/serviceDetail.schema";
 
 export const runtime = "edge";
 export const revalidate = 3600;
@@ -17,58 +7,126 @@ export const alt = "Open Graph image";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-/* =========================
-   Carga de contenido i18n (con validación)
-   ========================= */
-async function loadDetailContent(
-  locale: "es" | "en",
-  key: ServiceKey
-): Promise<ServiceDetailJSON | null> {
-  try {
-    const mapES: Record<ServiceKey, () => Promise<{ default: unknown }>> = {
-      landing: () => import("@/content/locales/es/services/landing.json"),
-      website: () => import("@/content/locales/es/services/website.json"),
-      ecommerce: () => import("@/content/locales/es/services/ecommerce.json"),
-      custom: () => import("@/content/locales/es/services/personalizado.json"),
-    };
-    const mapEN: Record<ServiceKey, () => Promise<{ default: unknown }>> = {
-      landing: () => import("@/content/locales/en/services/landing.json"),
-      website: () => import("@/content/locales/en/services/website.json"),
-      ecommerce: () => import("@/content/locales/en/services/ecommerce.json"),
-      custom: () => import("@/content/locales/en/services/custom.json"),
-    };
+type Locale = "es" | "en";
 
-    const raw = (await (locale === "es" ? mapES[key]() : mapEN[key]())).default;
-    return parseServiceDetail(raw);
-  } catch {
-    return null;
-  }
+/**
+ * ✅ Mantener bundle Edge < 1MB:
+ * - Sin imports internos (i18n/config/schemas/zod).
+ * - Sin parse/validación.
+ * - Mapa mínimo de copy por servicio.
+ */
+
+function normalizeLocale(raw?: string): Locale {
+  const v = (raw ?? "").toLowerCase();
+  if (v.startsWith("en")) return "en";
+  return "es";
 }
 
-/* =========================
-   OG image
-   ========================= */
+function getSiteName(): string {
+  return process.env.NEXT_PUBLIC_SITE_NAME?.trim() || "Black Crow";
+}
+
+function getDomain(): string {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.SITE_URL?.trim() ||
+    "https://blackcrow.studio";
+  return raw.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+type ServiceKey = "landing" | "website" | "ecommerce" | "custom";
+
+type OgServiceData = {
+  title: { es: string; en: string };
+  subtitle?: { es: string; en: string };
+  badge?: { es: string; en: string };
+  priceRange?: string;
+};
+
+/** Slugs canónicos por locale (para resolver key desde params.slug) */
+const SLUG_TO_KEY: Record<Locale, Record<string, ServiceKey>> = {
+  es: {
+    landing: "landing",
+    website: "website",
+    ecommerce: "ecommerce",
+    personalizado: "custom",
+    // por si alguien entra con slug EN en /es
+    custom: "custom",
+  },
+  en: {
+    landing: "landing",
+    website: "website",
+    ecommerce: "ecommerce",
+    custom: "custom",
+    // por si alguien entra con slug ES en /en
+    personalizado: "custom",
+  },
+};
+
+/** Copy mínimo para OG (no dependemos de JSON + schemas) */
+const OG_SERVICES: Record<ServiceKey, OgServiceData> = {
+  landing: {
+    title: { es: "Landing Page", en: "Landing Page" },
+    subtitle: {
+      es: "Alta conversión, rápida y lista para campañas",
+      en: "High-converting, fast, campaign-ready",
+    },
+    badge: { es: "Servicio", en: "Service" },
+    // Si quieres, puedes setear un rango fijo o dejarlo vacío
+    // priceRange: "Desde $XXX",
+  },
+  website: {
+    title: { es: "Sitio Web", en: "Website" },
+    subtitle: {
+      es: "Diseño premium, escalable y enfocado en marca",
+      en: "Premium, scalable, brand-first design",
+    },
+    badge: { es: "Servicio", en: "Service" },
+  },
+  ecommerce: {
+    title: { es: "E-Commerce", en: "E-Commerce" },
+    subtitle: {
+      es: "Tienda moderna con pagos, catálogo y analítica",
+      en: "Modern store with payments, catalog & analytics",
+    },
+    badge: { es: "Servicio", en: "Service" },
+  },
+  custom: {
+    title: { es: "Personalizado", en: "Custom" },
+    subtitle: {
+      es: "Soluciones a medida, claras y escalables",
+      en: "Tailored solutions, clear and scalable",
+    },
+    badge: { es: "Servicio", en: "Service" },
+  },
+};
+
+function getFallbackTitle(locale: Locale, siteName: string) {
+  return locale === "es" ? `Servicios — ${siteName}` : `Services — ${siteName}`;
+}
+
+function getFallbackSubtitle(locale: Locale) {
+  return locale === "es"
+    ? "Landing · Website · E-Commerce · Personalizado"
+    : "Landing · Website · E-Commerce · Custom";
+}
+
 export default async function Image({
   params,
 }: {
   params: { locale: string; slug: string };
 }) {
   const l = normalizeLocale(params?.locale);
-  const key = resolveServiceKeyFromSlug(l, params.slug);
-  const domain =
-    site?.url?.replace(/^https?:\/\//, "").replace(/\/$/, "") ??
-    "blackcrow.studio";
+  const siteName = getSiteName();
+  const domain = getDomain();
+
+  const slug = (params?.slug ?? "").toLowerCase();
+  const key = SLUG_TO_KEY[l][slug];
 
   // Fallback para índice si el slug no es válido
   if (!key) {
-    const title =
-      l === "es"
-        ? `Servicios — ${site?.name ?? "Black Crow"}`
-        : `Services — ${site?.name ?? "Black Crow"}`;
-    const subtitle =
-      l === "es"
-        ? "Landing · Website · E-Commerce · Personalizado"
-        : "Landing · Website · E-Commerce · Custom";
+    const title = getFallbackTitle(l, siteName);
+    const subtitle = getFallbackSubtitle(l);
 
     return new ImageResponse(
       (
@@ -95,60 +153,19 @@ export default async function Image({
           </div>
         </div>
       ),
-      { ...size }
+      { ...size },
     );
   }
 
-  const data = await loadDetailContent(l, key);
+  const data = OG_SERVICES[key];
 
-  // Si no se encuentra contenido válido, usa fallback del índice
-  if (!data) {
-    const title =
-      l === "es"
-        ? `Servicios — ${site?.name ?? "Black Crow"}`
-        : `Services — ${site?.name ?? "Black Crow"}`;
-    const subtitle =
-      l === "es"
-        ? "Landing · Website · E-Commerce · Personalizado"
-        : "Landing · Website · E-Commerce · Custom";
-
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: `${size.width}px`,
-            height: `${size.height}px`,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "64px",
-            background: "#0B0B0B",
-            color: "#FFFFFF",
-          }}
-        >
-          <div style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.1 }}>
-            {title}
-          </div>
-          <div style={{ marginTop: 12, fontSize: 28, opacity: 0.9 }}>
-            {subtitle}
-          </div>
-          <div style={{ marginTop: 28, fontSize: 22, opacity: 0.8 }}>
-            {domain}
-          </div>
-        </div>
-      ),
-      { ...size }
-    );
-  }
-
-  const canonicalSlug = serviceSlugByLocale[l][key];
-  const title = data.header?.title ?? canonicalSlug;
+  const title = data.title[l];
   const subtitle =
-    data.header?.subtitle ??
+    data.subtitle?.[l] ??
     (l === "es"
       ? "Servicio a medida, claro y escalable"
       : "Clear, scalable service");
-  const badge = data.header?.badge;
+  const badge = data.badge?.[l];
   const priceRange = data.priceRange;
 
   return new ImageResponse(
@@ -165,7 +182,7 @@ export default async function Image({
           color: "#FFFFFF",
         }}
       >
-        {/* Badge opcional ("Servicio") */}
+        {/* Badge opcional */}
         {badge ? (
           <div
             style={{
@@ -181,7 +198,7 @@ export default async function Image({
           </div>
         ) : null}
 
-        {/* Título grande + precio (si existe) */}
+        {/* Título + precio */}
         <div
           style={{
             display: "flex",
@@ -190,15 +207,10 @@ export default async function Image({
             flexWrap: "wrap",
           }}
         >
-          <div
-            style={{
-              fontSize: 56,
-              fontWeight: 700,
-              lineHeight: 1.1,
-            }}
-          >
+          <div style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.1 }}>
             {title}
           </div>
+
           {priceRange ? (
             <div
               style={{
@@ -215,9 +227,7 @@ export default async function Image({
 
         {/* Subtítulo */}
         {subtitle ? (
-          <div
-            style={{ marginTop: 12, fontSize: 28, opacity: 0.9 }}
-          >
+          <div style={{ marginTop: 12, fontSize: 28, opacity: 0.9 }}>
             {subtitle}
           </div>
         ) : null}
@@ -239,12 +249,12 @@ export default async function Image({
               borderRadius: 9999,
             }}
           >
-            {site?.name ?? "Black Crow"}
+            {siteName}
           </div>
           <div style={{ opacity: 0.8 }}>{domain}</div>
         </div>
       </div>
     ),
-    { ...size }
+    { ...size },
   );
 }

@@ -1,9 +1,5 @@
 // src/app/opengraph-image.tsx
 import { ImageResponse } from "next/og";
-import { normalizeLocale } from "@/i18n/locales";
-import esHome from "@/content/locales/es/pages/home.json";
-import enHome from "@/content/locales/en/pages/home.json";
-import { OG_THEME, rgba } from "@/core/seo/ogTheme";
 
 // Next necesita leer estos exports directamente aquí
 export const runtime = "edge";
@@ -12,13 +8,58 @@ export const size = { width: 1200, height: 630 };
 
 type Locale = "es" | "en";
 
-type ContentPage = {
-  sections: Array<{ kind: string; data: any }>;
-};
+/**
+ * ✅ Mantener bundle Edge < 1MB:
+ * - Sin imports internos (i18n/locales, home.json, ogTheme).
+ * - Copy mínimo inline.
+ * - Theme inline.
+ */
 
-function getHomeByLocale(locale: Locale): ContentPage {
-  return (locale === "en" ? enHome : esHome) as ContentPage;
+function normalizeLocale(raw?: string): Locale {
+  const v = (raw ?? "").toLowerCase();
+  if (v.startsWith("en")) return "en";
+  return "es";
 }
+
+// Snapshot mínimo de theme (la imagen no lee globals.css)
+const THEME = {
+  surface: "#FCFCFC",
+  text: "#0B0F10",
+  textMuted: "#6A6F78",
+  brand: "#FF2D8A",
+  brandMuted: "#FFE0EF",
+  border: "#EAEAEA",
+} as const;
+
+// Utilidad simple para RGBA desde hex
+function rgba(hex: string, alpha: number) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(
+    clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean,
+    16,
+  );
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Copy mínimo para OG
+const OG_COPY: Record<
+  Locale,
+  { kicker: string; headline: string; tagline: string }
+> = {
+  es: {
+    kicker: "AGENCIA CREATIVA & TECH",
+    headline: "Límites",
+    tagline: "UX/UI – Branding – Desarrollo Web",
+  },
+  en: {
+    kicker: "CREATIVE & TECH AGENCY",
+    headline: "Limits",
+    tagline: "UX/UI – Branding – Web Development",
+  },
+};
 
 export default async function OpengraphImage({
   params,
@@ -26,31 +67,9 @@ export default async function OpengraphImage({
   params?: Promise<{ locale?: string }>;
 }) {
   const resolvedParams = params ? await params : {};
-  const locale = normalizeLocale(resolvedParams?.locale) as Locale;
+  const locale = normalizeLocale(resolvedParams?.locale);
 
-  const page = getHomeByLocale(locale);
-
-  const hero = page.sections.find((s) => s.kind === "hero")?.data as
-    | {
-        kicker?: string;
-        headline?: string;
-        tagline?: string;
-      }
-    | undefined;
-
-  const kicker =
-    (hero?.kicker ??
-      (locale === "en"
-        ? "CREATIVE & TECH AGENCY"
-        : "AGENCIA CREATIVA & TECH"))?.toUpperCase() ?? "";
-
-  const headline = hero?.headline ?? (locale === "en" ? "Limits" : "Límites");
-
-  const tagline =
-    hero?.tagline ??
-    (locale === "en"
-      ? "UX/UI – Branding – Web Development"
-      : "UX/UI – Branding – Desarrollo Web");
+  const { kicker, headline, tagline } = OG_COPY[locale];
 
   return new ImageResponse(
     (
@@ -60,8 +79,8 @@ export default async function OpengraphImage({
           height: size.height,
           display: "flex",
           position: "relative",
-          background: OG_THEME.surface,
-          color: OG_THEME.text,
+          background: THEME.surface,
+          color: THEME.text,
         }}
       >
         {/* Gradientes decorativos */}
@@ -71,15 +90,15 @@ export default async function OpengraphImage({
             inset: 0,
             background: `
               radial-gradient(800px 400px at 100% 0%, ${rgba(
-                OG_THEME.brand,
+                THEME.brand,
                 0.12,
               )}, transparent),
               radial-gradient(800px 400px at 100% 100%, ${rgba(
-                OG_THEME.brand,
+                THEME.brand,
                 0.1,
               )}, transparent),
               radial-gradient(700px 300px at 0% 50%, ${rgba(
-                OG_THEME.brandMuted,
+                THEME.brandMuted,
                 0.35,
               )}, transparent)
             `,
@@ -101,7 +120,7 @@ export default async function OpengraphImage({
               letterSpacing: 6,
               fontSize: 20,
               textTransform: "uppercase",
-              color: OG_THEME.textMuted,
+              color: THEME.textMuted,
             }}
           >
             {kicker}
@@ -121,7 +140,7 @@ export default async function OpengraphImage({
             style={{
               fontSize: 28,
               marginTop: 8,
-              color: OG_THEME.textMuted,
+              color: THEME.textMuted,
             }}
           >
             {tagline}
@@ -141,19 +160,14 @@ export default async function OpengraphImage({
                 height: 48,
                 borderRadius: 12,
                 background: `linear-gradient(135deg, ${rgba(
-                  OG_THEME.brand,
+                  THEME.brand,
                   0.22,
-                )}, ${rgba(OG_THEME.brand, 0.08)})`,
-                boxShadow: `0 8px 16px -4px ${rgba(
-                  OG_THEME.brand,
-                  0.25,
-                )}`,
-                border: `1px solid ${OG_THEME.border}`,
+                )}, ${rgba(THEME.brand, 0.08)})`,
+                boxShadow: `0 8px 16px -4px ${rgba(THEME.brand, 0.25)}`,
+                border: `1px solid ${THEME.border}`,
               }}
             />
-            <span style={{ fontSize: 28, fontWeight: 700 }}>
-              Black Crow
-            </span>
+            <span style={{ fontSize: 28, fontWeight: 700 }}>Black Crow</span>
           </div>
         </div>
       </div>
