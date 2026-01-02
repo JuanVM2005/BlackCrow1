@@ -46,83 +46,94 @@ function shouldSkip(pathname: string): boolean {
 }
 
 export function middleware(req: NextRequest) {
-  const url = new URL(req.url);
-  const { pathname, search } = url;
+  try {
+    // ✅ Evita "Invalid URL" y edge inconsistencias: usa nextUrl del runtime
+    const url = req.nextUrl.clone();
+    const { pathname, search } = url;
 
-  // 0) Ignorar assets/rutas técnicas
-  if (shouldSkip(pathname)) {
-    return NextResponse.next();
-  }
+    // 0) Ignorar assets/rutas técnicas
+    if (shouldSkip(pathname)) {
+      return NextResponse.next();
+    }
 
-  // 1) Raíz: / → /<preferredLocale>
-  if (pathname === "/") {
+    // 1) Raíz: / → /<preferredLocale>
+    if (pathname === "/") {
+      const preferred = getPreferredLocale(req);
+      url.pathname = `/${preferred}`;
+      url.search = search;
+
+      const res = NextResponse.redirect(url, 308);
+      res.cookies.set("NEXT_LOCALE", preferred, { path: "/" });
+      res.headers.set("X-Redirect-By", "middleware");
+      return res;
+    }
+
+    const segs = pathname.split("/").filter(Boolean);
+    const firstRaw = segs[0] ?? "";
+    const firstLower = firstRaw.toLowerCase();
+
+    // 2a) /ES → /es
+    if (LOCALES.has(firstLower) && firstRaw !== firstLower) {
+      segs[0] = firstLower;
+      url.pathname = "/" + segs.join("/");
+      url.search = search;
+      return NextResponse.redirect(url, 308);
+    }
+
+    // 2b) /es-PE o /en-US → /es | /en
+    const localeVariantMatch = /^([A-Za-z]{2})(-[A-Za-z]{2})?$/.test(firstRaw);
+    if (!LOCALES.has(firstLower) && localeVariantMatch) {
+      const base = firstLower.split("-")[0];
+      const normalized = LOCALES.has(base) ? base : DEFAULT_LOCALE;
+      segs[0] = normalized;
+
+      url.pathname = "/" + segs.join("/");
+      url.search = search;
+
+      const res = NextResponse.redirect(url, 308);
+      res.cookies.set("NEXT_LOCALE", normalized, { path: "/" });
+      return res;
+    }
+
+    // 2c) Ya trae locale válido → aplicar slugs semánticos
+    if (LOCALES.has(firstLower)) {
+      const locale = firstLower;
+      const slug = segs[1];
+
+      // ❌ /es/contact → /es/contacto
+      if (locale === "es" && slug === "contact") {
+        segs[1] = "contacto";
+        url.pathname = "/" + segs.join("/");
+        url.search = search;
+        return NextResponse.redirect(url, 308);
+      }
+
+      // ❌ /en/contacto → /en/contact
+      if (locale === "en" && slug === "contacto") {
+        segs[1] = "contact";
+        url.pathname = "/" + segs.join("/");
+        url.search = search;
+        return NextResponse.redirect(url, 308);
+      }
+
+      // ✅ locale válido + slug correcto
+      return NextResponse.next();
+    }
+
+    // 3) Sin prefijo de locale → HOME del preferido
     const preferred = getPreferredLocale(req);
     url.pathname = `/${preferred}`;
     url.search = search;
+
     const res = NextResponse.redirect(url, 308);
     res.cookies.set("NEXT_LOCALE", preferred, { path: "/" });
     res.headers.set("X-Redirect-By", "middleware");
     return res;
-  }
-
-  const segs = pathname.split("/").filter(Boolean);
-  const firstRaw = segs[0] ?? "";
-  const firstLower = firstRaw.toLowerCase();
-
-  // 2a) /ES → /es
-  if (LOCALES.has(firstLower) && firstRaw !== firstLower) {
-    segs[0] = firstLower;
-    url.pathname = "/" + segs.join("/");
-    url.search = search;
-    return NextResponse.redirect(url, 308);
-  }
-
-  // 2b) /es-PE o /en-US → /es | /en
-  const localeVariantMatch = /^([A-Za-z]{2})(-[A-Za-z]{2})?$/.test(firstRaw);
-  if (!LOCALES.has(firstLower) && localeVariantMatch) {
-    const base = firstLower.split("-")[0];
-    const normalized = LOCALES.has(base) ? base : DEFAULT_LOCALE;
-    segs[0] = normalized;
-    url.pathname = "/" + segs.join("/");
-    url.search = search;
-    const res = NextResponse.redirect(url, 308);
-    res.cookies.set("NEXT_LOCALE", normalized, { path: "/" });
-    return res;
-  }
-
-  // 2c) Ya trae locale válido → aplicar slugs semánticos
-  if (LOCALES.has(firstLower)) {
-    const locale = firstLower;
-    const slug = segs[1];
-
-    // ❌ /es/contact → /es/contacto
-    if (locale === "es" && slug === "contact") {
-      segs[1] = "contacto";
-      url.pathname = "/" + segs.join("/");
-      url.search = search;
-      return NextResponse.redirect(url, 308);
-    }
-
-    // ❌ /en/contacto → /en/contact
-    if (locale === "en" && slug === "contacto") {
-      segs[1] = "contact";
-      url.pathname = "/" + segs.join("/");
-      url.search = search;
-      return NextResponse.redirect(url, 308);
-    }
-
-    // ✅ locale válido + slug correcto
+  } catch (err) {
+    // ✅ nunca tumbes el sitio por un edge request rara
+    console.error("middleware_error", err);
     return NextResponse.next();
   }
-
-  // 3) Sin prefijo de locale → HOME del preferido
-  const preferred = getPreferredLocale(req);
-  url.pathname = `/${preferred}`;
-  url.search = search;
-  const res = NextResponse.redirect(url, 308);
-  res.cookies.set("NEXT_LOCALE", preferred, { path: "/" });
-  res.headers.set("X-Redirect-By", "middleware");
-  return res;
 }
 
 function getPreferredLocale(req: NextRequest): "es" | "en" {
