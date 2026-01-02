@@ -95,9 +95,9 @@ export default function GallerySection({ items, className }: Props) {
                 // tamaño tipo card vertical
                 'w-[64vw] sm:w-[44vw] md:w-[30vw] lg:w-[22vw] xl:w-[18vw]',
                 'relative',
-                'aspect-[3/4]',
+                'aspect-3/4',
                 // puntas más marcadas (menos redondas)
-                'rounded-[4px]',
+                'rounded-sm',
                 'overflow-hidden',
               ].join(' ')}
             >

@@ -8,6 +8,10 @@ import Cursor from "@/ui/Cursor";
 import ScrollRail from "@/ui/ScrollRail";
 import "@/styles/globals.css";
 
+// ✅ Vercel Analytics
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -62,11 +66,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className="
             fixed left-4 -top-24 z-50
             px-3 py-2 rounded-lg shadow border
-            bg-[color:var(--surface)] text-[color:var(--text)]
-            border-[color:var(--border)]
+            bg-(--surface) text-(--text)
+            border-(--border)
             transition-[top] duration-300
             focus-visible:top-4
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ring)
           "
         >
           Saltar al contenido
@@ -89,6 +93,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           thumbFixedPx={120} // ← alto fijo del thumb (ajusta a gusto)
           ariaLabel="Barra de desplazamiento"
         />
+
+        {/* ✅ Vercel Analytics (tráfico/rutas) */}
+        <Analytics />
+
+        {/* ✅ Speed Insights (Web Vitals reales) */}
+        <SpeedInsights />
       </body>
     </html>
   );

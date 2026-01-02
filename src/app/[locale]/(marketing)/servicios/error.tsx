@@ -34,7 +34,7 @@ export default function ServiciosError({
   }, [error]);
 
   return (
-    <main data-surface="base" className="bg-[var(--surface-base)] text-[var(--text)]">
+    <main data-surface="base" className="bg-(--surface-base) text-(--text)">
       <Section>
         <Container>
           {/* Usa el tamaño por defecto de Heading; evita `size` para no romper el tipo */}
@@ -42,7 +42,7 @@ export default function ServiciosError({
             {t.title}
           </Typography.Heading>
 
-          <div className="mt-[var(--space-4)]">
+          <div className="mt-(--space-4)">
             <Button onClick={reset}>{t.action}</Button>
           </div>
         </Container>

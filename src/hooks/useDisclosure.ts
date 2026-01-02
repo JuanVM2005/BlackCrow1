@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Options = {
   initialOpen?: boolean;
-  onOpen?: () => void;
-  onClose?: () => void;
-  onToggle?: (open: boolean) => void;
+
+  /**
+   * Next exige que funciones pasadas como "props" en entry client
+   * se llamen `action` o terminen en `Action`.
+   */
+  onOpenAction?: () => void;
+  onCloseAction?: () => void;
+  onToggleAction?: (open: boolean) => void;
 };
 
 type UseDisclosureReturn = {
@@ -18,23 +23,28 @@ type UseDisclosureReturn = {
 };
 
 export function useDisclosure(options: Options = {}): UseDisclosureReturn {
-  const { initialOpen = false, onOpen, onClose, onToggle } = options;
+  const {
+    initialOpen = false,
+    onOpenAction,
+    onCloseAction,
+    onToggleAction,
+  } = options;
+
   const [open, setOpen] = useState<boolean>(initialOpen);
 
   const openPanel = useCallback(() => setOpen(true), []);
   const closePanel = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((v) => !v), []);
 
-  // Callbacks on state change
   useEffect(() => {
-    if (open) onOpen?.();
-    else onClose?.();
-    onToggle?.(open);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    if (open) onOpenAction?.();
+    else onCloseAction?.();
+
+    onToggleAction?.(open);
+  }, [open, onOpenAction, onCloseAction, onToggleAction]);
 
   return useMemo(
     () => ({ open, openPanel, closePanel, toggle, setOpen }),
-    [open, openPanel, closePanel, toggle]
+    [open, openPanel, closePanel, toggle],
   );
 }

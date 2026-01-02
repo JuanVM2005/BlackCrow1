@@ -1,81 +1,70 @@
 // src/app/[locale]/(marketing)/servicios/page.tsx
 import Container from "@/ui/Container";
 import Section from "@/ui/Section";
-import Typography from "@/ui/Typography";
 import { normalizeLocale } from "@/i18n/locales";
-import type { ServiceKey } from "@/i18n/routing/static";
-import { serviceDetailPath } from "@/i18n/routing/static";
-import ServicesList from "@/features/services/ui/list";
+
+// Pricing
+import Pricing from "@/features/pricing/ui";
+import * as PricingSchema from "@/content/schemas/pricing.schema";
+import * as PricingMapper from "@/features/pricing/content/pricing.mapper";
 
 /** Revalidación diaria (SSG + ISR) */
 export const revalidate = 86400;
 
-/** Forma mínima del JSON de índice (solo para tipado local) */
-type LinkItem = { label: string; href?: string; external?: boolean };
-type ServicesIndexJSON = {
-  header?: { title: string; subtitle?: string };
-  items?: Array<{ key: ServiceKey; title: string; summary?: string; cta?: LinkItem }>;
+// 👇 Next 16: params es Promise
+type PageProps = {
+  params: Promise<{ locale: string }>;
 };
 
-/** Carga el contenido i18n de /servicios (sin hardcode) */
-async function loadContent(locale: string): Promise<ServicesIndexJSON | null> {
+/** Carga pricing i18n */
+async function loadPricing(locale: string): Promise<unknown | null> {
   const l = normalizeLocale(locale);
   try {
     if (l === "es") {
-      return (await import("@/content/locales/es/pages/servicios.json"))
-        .default as ServicesIndexJSON;
+      return (await import("@/content/locales/es/sections/pricing.json")).default;
     }
-    return (await import("@/content/locales/en/pages/services.json"))
-      .default as ServicesIndexJSON;
+    return (await import("@/content/locales/en/sections/pricing.json")).default;
   } catch {
     return null;
   }
 }
 
-// 👇 Next 16: params es un Promise y hay que hacerle await
-type PageProps = {
-  params: Promise<{ locale: string }>;
-};
-
-export default async function ServiciosIndex({ params }: PageProps) {
+export default async function ServiciosPricingPage({ params }: PageProps) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
 
-  const content = await loadContent(locale);
+  const pricingRaw = await loadPricing(locale);
+  if (!pricingRaw) return null;
 
-  const header = content?.header;
-  const items = content?.items ?? [];
+  // Resolver parser / mapper reales del proyecto (sin asumir nombres exactos)
+  const schemaAny = PricingSchema as any;
+  const mapperAny = PricingMapper as any;
 
-  // Enlazado correcto: si un item no trae CTA o le falta href,
-  // generamos la ruta canónica con serviceDetailPath(locale, key).
-  const itemsNormalized = items.map((it) => {
-    const href = it.cta?.href ?? serviceDetailPath(locale, it.key);
-    const label = it.cta?.label ?? (locale === "es" ? "Ver servicio" : "View service");
-    const external = it.cta?.external;
-    return { ...it, cta: { label, href, external } };
-  });
+  const parseFn =
+    schemaAny.parsePricing ??
+    schemaAny.parsePricingSection ??
+    schemaAny.parsePricingBlock ??
+    schemaAny.parse;
+
+  const mapFn =
+    mapperAny.mapPricing ??
+    mapperAny.mapPricingSection ??
+    mapperAny.mapPricingBlock ??
+    mapperAny.map;
+
+  const parsed = typeof parseFn === "function" ? parseFn(pricingRaw) : pricingRaw;
+  const pricingProps = typeof mapFn === "function" ? mapFn(parsed) : parsed;
 
   return (
-    <main
-      data-surface="base"
-      className="bg-[var(--surface-base)] text-[var(--text)]"
-    >
-      {/* HERO */}
+    // ✅ Solo Pricing. El fondo lo maneja el layout inverse.
+    <main>
       <Section>
         <Container>
-          {header?.title ? (
-            <Typography.Heading as="h1">{header.title}</Typography.Heading>
-          ) : null}
-          {header?.subtitle ? (
-            <Typography.Text as="p">{header.subtitle}</Typography.Text>
-          ) : null}
-        </Container>
-      </Section>
-
-      {/* LISTADO DE SERVICIOS */}
-      <Section>
-        <Container>
-          <ServicesList locale={locale} items={itemsNormalized} />
+          {/* ✅ Tokens INVERSE para que el contenido sea legible sobre fondo oscuro,
+              sin pintar fondo (NO usar surface-inverse aquí). */}
+          <div data-surface="inverse">
+            <Pricing {...pricingProps} />
+          </div>
         </Container>
       </Section>
     </main>

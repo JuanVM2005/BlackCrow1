@@ -76,14 +76,18 @@ function sanitizeLegacyServiceDetail(raw: unknown): unknown {
       : undefined;
 
   if (obj.featuresLeft) obj.featuresLeft = sanitizeStringArray(obj.featuresLeft);
-  if (obj.featuresRight) obj.featuresRight = sanitizeStringArray(obj.featuresRight);
+  if (obj.featuresRight)
+    obj.featuresRight = sanitizeStringArray(obj.featuresRight);
   if (obj.tags) obj.tags = sanitizeStringArray(obj.tags);
 
   // --- header trims
   if (obj.header && typeof obj.header === "object") {
-    if (typeof obj.header.title === "string") obj.header.title = obj.header.title.trim();
-    if (typeof obj.header.subtitle === "string") obj.header.subtitle = obj.header.subtitle.trim();
-    if (typeof obj.header.badge === "string") obj.header.badge = obj.header.badge.trim();
+    if (typeof obj.header.title === "string")
+      obj.header.title = obj.header.title.trim();
+    if (typeof obj.header.subtitle === "string")
+      obj.header.subtitle = obj.header.subtitle.trim();
+    if (typeof obj.header.badge === "string")
+      obj.header.badge = obj.header.badge.trim();
   }
 
   return obj;
@@ -125,7 +129,10 @@ async function loadDetailContent(
           console.warn("[services] sanitized OK:", { key, locale });
           return parsed;
         } catch {
-          console.error("[services] sanitization failed, returning null:", { key, locale });
+          console.error("[services] sanitization failed, returning null:", {
+            key,
+            locale,
+          });
           return null;
         }
       }
@@ -147,10 +154,9 @@ export async function generateMetadata({
   const { locale: rawLocale, slug } = await params;
   const l = normalizeLocale(rawLocale) as "es" | "en";
   const key = resolveServiceKeyFromSlug(l, slug);
+
   const baseUrl = (
-    site?.url ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || site.url
   ).replace(/\/$/, "");
 
   // Fallback de índice si el slug no es válido
@@ -198,7 +204,9 @@ export async function generateMetadata({
   const description =
     data?.seo?.description ??
     data?.header?.subtitle ??
-    (l === "es" ? "Servicio web a medida, claro y escalable." : "Clear, scalable web service.");
+    (l === "es"
+      ? "Servicio web a medida, claro y escalable."
+      : "Clear, scalable web service.");
 
   const altLocale = l === "es" ? "en" : "es";
   const altSeg = servicesSegmentByLocale[altLocale as "es" | "en"];
@@ -311,12 +319,11 @@ export default async function ServiceDetailPage({
   const data = await loadDetailContent(locale, key);
   if (!data) notFound();
 
-  // URLs para JSON-LD
   const baseUrl = (
-    site?.url ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || site.url
   ).replace(/\/$/, "");
+
+  // URLs para JSON-LD
   const seg = servicesSegmentByLocale[locale];
   const pageUrl = `${baseUrl}/${locale}/${seg}/${canonicalSlug}`;
   const homeUrl = `${baseUrl}/${locale}`;

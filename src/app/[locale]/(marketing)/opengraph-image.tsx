@@ -34,20 +34,6 @@ function getHomeByLocale(locale: Locale): ContentPage {
   return (locale === "en" ? enHome : esHome) as unknown as ContentPage;
 }
 
-async function loadInterWoff2() {
-  try {
-    const res = await fetch(
-      new URL(
-        "../../../../public/fonts/Inter/Inter[wght].woff2",
-        import.meta.url,
-      ),
-    );
-    return await res.arrayBuffer();
-  } catch {
-    return undefined;
-  }
-}
-
 // Utilidad simple para RGBA desde hex
 function rgba(hex: string, alpha: number) {
   const clean = hex.replace("#", "");
@@ -87,17 +73,13 @@ export default async function Image({
         ? "CREATIVE & TECH AGENCY"
         : "AGENCIA CREATIVA & TECH"))?.toUpperCase() ?? "";
 
-  const headline =
-    hero?.headline ?? (locale === "en" ? "Limits" : "Límites");
+  const headline = hero?.headline ?? (locale === "en" ? "Limits" : "Límites");
 
   const tagline =
     hero?.tagline ??
     (locale === "en"
       ? "UX/UI – Branding – Web Development"
       : "UX/UI – Branding – Desarrollo Web");
-
-  const fontData = await loadInterWoff2();
-  const fontFamily = "Inter";
 
   return new ImageResponse(
     (
@@ -109,7 +91,7 @@ export default async function Image({
           position: "relative",
           background: THEME.surface,
           color: THEME.text,
-          fontFamily,
+          // Sin font custom: usamos la default del runtime
         }}
       >
         {/* Decoración con gradientes suaves (alineadas a tu brand) */}
@@ -133,6 +115,7 @@ export default async function Image({
             justifyContent: "center",
             padding: "60px 80px",
             gap: 24,
+            position: "relative",
           }}
         >
           {/* Kicker */}
@@ -147,7 +130,7 @@ export default async function Image({
             {kicker}
           </div>
 
-          {/* Headline (soporta saltos de línea) */}
+          {/* Headline */}
           <div
             style={{
               fontSize: 96,
@@ -199,16 +182,7 @@ export default async function Image({
     ),
     {
       ...size,
-      fonts: fontData
-        ? [
-            {
-              name: fontFamily,
-              data: fontData,
-              weight: 700,
-              style: "normal",
-            },
-          ]
-        : [],
+      // ✅ sin fonts
     },
   );
 }

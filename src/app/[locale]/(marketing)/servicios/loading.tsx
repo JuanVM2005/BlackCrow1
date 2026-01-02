@@ -9,26 +9,26 @@ import Grid from "@/ui/Grid";
  */
 export default function LoadingServicios() {
   return (
-    <main data-surface="base" className="bg-[var(--surface-base)]">
+    <main data-surface="base" className="bg-(--surface-base)">
       <Section>
         <Container>
-          <div className="h-8 w-2/3 rounded-[var(--radius-md)] bg-[var(--skeleton,var(--neutral-200))]" />
-          <div className="mt-[var(--space-2)] h-5 w-1/2 rounded-[var(--radius-sm)] bg-[var(--skeleton,var(--neutral-200))]" />
+          <div className="h-8 w-2/3 rounded-md bg-(--skeleton)" />
+          <div className="mt-(--space-2) h-5 w-1/2 rounded-sm bg-(--skeleton)" />
         </Container>
       </Section>
 
       <Section>
         <Container>
-          <Grid className="grid-cols-1 md:grid-cols-2 gap-[var(--space-6)]">
+          <Grid className="grid-cols-1 md:grid-cols-2 gap-(--space-6)">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-[var(--radius-lg)] border border-[var(--border)] p-[var(--space-6)]"
+                className="rounded-lg border border-(--border) p-(--space-6)"
               >
-                <div className="h-6 w-2/3 rounded-[var(--radius-sm)] bg-[var(--skeleton,var(--neutral-200))]" />
-                <div className="mt-[var(--space-3)] h-4 w-full rounded-[var(--radius-sm)] bg-[var(--skeleton,var(--neutral-200))]" />
-                <div className="mt-[var(--space-2)] h-4 w-5/6 rounded-[var(--radius-sm)] bg-[var(--skeleton,var(--neutral-200))]" />
-                <div className="mt-[var(--space-5)] h-10 w-32 rounded-[var(--radius-md)] bg-[var(--skeleton,var(--neutral-200))]" />
+                <div className="h-6 w-2/3 rounded-sm bg-(--skeleton)" />
+                <div className="mt-(--space-3) h-4 w-full rounded-sm bg-(--skeleton)" />
+                <div className="mt-(--space-2) h-4 w-5/6 rounded-sm bg-(--skeleton)" />
+                <div className="mt-(--space-5) h-10 w-32 rounded-md bg-(--skeleton)" />
               </div>
             ))}
           </Grid>

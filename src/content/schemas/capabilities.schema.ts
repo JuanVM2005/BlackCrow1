@@ -13,10 +13,17 @@ export const CapabilitiesHeaderSchema = z.object({
   aside: z.string(),
 });
 
+/** Imagen asociada a un ítem (para hover preview). */
+export const CapabilitiesItemImageSchema = z.object({
+  src: z.string(),
+  alt: z.string().optional(),
+});
+
 /** Ítem de capacidad/servicio. */
 export const CapabilitiesItemSchema = z.object({
   title: z.string(),
   description: z.string(),
+  image: CapabilitiesItemImageSchema.optional(),
 });
 
 /**
@@ -30,5 +37,6 @@ export const CapabilitiesSectionSchema = z.object({
 });
 
 export type CapabilitiesHeader = z.infer<typeof CapabilitiesHeaderSchema>;
+export type CapabilitiesItemImage = z.infer<typeof CapabilitiesItemImageSchema>;
 export type CapabilitiesItem = z.infer<typeof CapabilitiesItemSchema>;
 export type CapabilitiesSection = z.infer<typeof CapabilitiesSectionSchema>;

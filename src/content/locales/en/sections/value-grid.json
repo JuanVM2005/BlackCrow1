@@ -3,10 +3,10 @@
   "cards": [
     {
       "title": "From idea to reality",
-      "body": "We define your website’s\npurpose and align it with your\ngoals."
+      "body": "We define your website’s purpose and align it with your goals."
     },
     {
-      "title": "Intuitive UI/UX Design",
+      "title": "Intuitive UI/UX design",
       "body": "Tailor-made design\n& development",
       "widget": {
         "kind": "cms",
@@ -19,17 +19,13 @@
     },
     {
       "title": "Responsive",
-      "body": "Compatible with mobile devices",
-      "image": {
-        "src": "/images/value-grid/phone.webp",
-        "alt": "Phone mockup displaying Black Crow design"
-      }
+      "body": "Optimized for mobile and modern devices."
     },
     {
-      "title": "Total Optimization",
-      "body": "Speed, SEO and performance\nat the highest level.",
+      "title": "Total optimization",
+      "body": "Speed, SEO, and performance at the highest level.",
       "image": {
-        "src": "/images/value-grid/rocket.webp",
+        "src": "/images/value-grid/cohete.svg",
         "alt": "Rocket launch representing high performance"
       }
     }

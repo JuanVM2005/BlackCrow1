@@ -1,7 +1,8 @@
 // src/core/index.ts
-
-// Re-exportamos módulos principales del core.
-// Si en el futuro agregas más capas (utils, domain, etc.),
-// solo las añades aquí.
+// Barrel del core (API pública interna).
+// Mantén aquí solo módulos estables que se consumen desde features/app.
 
 export * as validation from "./validation";
+export * as http from "./http";
+export * as seo from "./seo";
+export * as errors from "./errors";

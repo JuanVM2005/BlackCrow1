@@ -32,31 +32,41 @@ export default function Modal({
 
   useLockBodyScroll(open);
 
+  /* =========================================================
+     Escape → cerrar
+     ========================================================= */
   React.useEffect(() => {
     if (!open) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
         onOpenChangeAction(false);
       }
     };
+
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
   }, [open, onOpenChangeAction]);
 
+  /* =========================================================
+     Focus trap
+     ========================================================= */
   React.useEffect(() => {
     if (!open) return;
 
+    const root = dialogRef.current;
+    if (!root) return;
+
     const focusTarget =
       initialFocusRef?.current ??
-      (dialogRef.current?.querySelector<HTMLElement>("[data-autofocus]") ?? dialogRef.current);
+      root.querySelector<HTMLElement>("[data-autofocus]") ??
+      root;
 
-    const id = requestAnimationFrame(() => focusTarget?.focus?.());
+    const raf = requestAnimationFrame(() => focusTarget?.focus?.());
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
-      const root = dialogRef.current;
-      if (!root) return;
 
       const focusables = root.querySelectorAll<HTMLElement>(
         [
@@ -68,9 +78,10 @@ export default function Modal({
           "[tabindex]:not([tabindex='-1'])",
         ].join(","),
       );
+
       if (!focusables.length) {
         e.preventDefault();
-        (root as HTMLElement).focus();
+        root.focus();
         return;
       }
 
@@ -81,19 +92,19 @@ export default function Modal({
       if (e.shiftKey) {
         if (active === first || !root.contains(active)) {
           e.preventDefault();
-          (last as HTMLElement).focus();
+          last.focus();
         }
       } else {
         if (active === last || !root.contains(active)) {
           e.preventDefault();
-          (first as HTMLElement).focus();
+          first.focus();
         }
       }
     };
 
     document.addEventListener("keydown", onKeyDown, true);
     return () => {
-      cancelAnimationFrame(id);
+      cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKeyDown, true);
     };
   }, [open, initialFocusRef]);
@@ -106,6 +117,7 @@ export default function Modal({
     duration: 0.2,
     ease: [0.22, 1, 0.36, 1],
   };
+
   const dialogTransition: Transition = {
     type: "spring",
     stiffness: 220,
@@ -117,37 +129,40 @@ export default function Modal({
     <AnimatePresence>
       {open && (
         <motion.div
+          ref={overlayRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={overlayTransition}
-          ref={overlayRef}
-          className={cn(
-            "fixed inset-0 z-[var(--z-overlay)]",
-            "bg-[var(--scrim,rgba(0,0,0,0.5))] backdrop-blur-md",
-            "flex items-center justify-center p-[var(--radius-xl)]",
-            overlayClassName,
-          )}
           onMouseDown={onOverlayClick}
           aria-hidden="true"
+          className={cn(
+            "fixed inset-0 z-(--z-overlay)",
+            "flex items-center justify-center",
+            "bg-(--scrim) backdrop-blur-md",
+            "p-(--space-6)",
+            overlayClassName,
+          )}
         >
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            transition={dialogTransition}
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
             aria-describedby={descId}
             tabIndex={-1}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={dialogTransition}
             className={cn(
-              "relative z-[var(--z-modal)] outline-none",
+              "relative outline-none",
               "w-full max-w-2xl",
-              "rounded-[var(--radius-2xl)] border border-[var(--border-card)]",
-              "bg-[var(--surface-card)] text-[var(--text-inverse)] shadow-xl",
-              "focus-visible:ring-2 focus-visible:ring-[var(--primary-500)]",
+              "rounded-2xl",
+              "border border-(--border-card)",
+              "bg-(--surface-card) text-(--text)",
+              "shadow-xl",
+              "focus-visible:ring-2 focus-visible:ring-(--ring)",
               className,
             )}
           >
@@ -155,13 +170,15 @@ export default function Modal({
 
             <button
               type="button"
-              aria-label="Close"
+              aria-label="Cerrar"
               onClick={() => onOpenChangeAction(false)}
               className={cn(
-                "absolute right-[var(--radius-md)] top-[var(--radius-md)]",
-                "inline-flex h-9 w-9 items-center justify-center rounded-full",
-                "border border-[var(--border-card)] bg-[color:transparent]",
-                "transition-[opacity,transform] hover:opacity-90 active:scale-95",
+                "absolute right-(--space-3) top-(--space-3)",
+                "inline-flex h-9 w-9 items-center justify-center",
+                "rounded-full border border-(--border-card)",
+                "bg-transparent",
+                "transition-[opacity,transform]",
+                "hover:opacity-90 active:scale-95",
               )}
             >
               <svg
@@ -186,27 +203,69 @@ export default function Modal({
   );
 }
 
-/* Helpers (sin encabezado h3 interno para evitar anidación) */
+/* =========================================================
+   Subcomponentes
+   ========================================================= */
+
 export function ModalHeader({
   id,
   children,
   className,
-}: { id?: string; children: React.ReactNode; className?: string }) {
-  return <div id={id} className={cn("p-[var(--radius-xl)] pb-[var(--radius-md)]", className)}>{children}</div>;
+}: {
+  id?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      id={id}
+      className={cn(
+        "p-(--space-6) pb-(--space-4)",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function ModalBody({
   id,
   children,
   className,
-}: { id?: string; children: React.ReactNode; className?: string }) {
+}: {
+  id?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div id={id} className={cn("px-[var(--radius-xl)] pb-[var(--radius-xl)]", className)}>
+    <div
+      id={id}
+      className={cn(
+        "px-(--space-6) pb-(--space-6)",
+        className,
+      )}
+    >
       {children}
     </div>
   );
 }
 
-export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("px-[var(--radius-xl)] pb-[var(--radius-xl)]", className)}>{children}</div>;
+export function ModalFooter({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "px-(--space-6) pb-(--space-6)",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }

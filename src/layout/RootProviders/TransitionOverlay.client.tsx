@@ -117,14 +117,14 @@ export default function TransitionOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-modal)] pointer-events-auto overflow-hidden"
+      className="fixed inset-0 z-(--z-modal) pointer-events-auto overflow-hidden"
       aria-hidden="true"
     >
       {/* Panel de fondo */}
       <div
         className={[
           "absolute inset-0",
-          "bg-[var(--surface-inverse)]",
+          "bg-(--surface-inverse)",
           "transform transition-transform duration-320",
           slideClasses,
         ].join(" ")}

@@ -18,7 +18,7 @@ type ErrorLike = {
 
 type LogRecord = {
   ts: string; // ISO timestamp
-  level: LogLevel;
+  level: Exclude<LogLevel, "silent">;
   msg?: string;
   ctx?: Record<string, unknown>;
   fields?: Record<string, unknown>;
@@ -34,7 +34,9 @@ const LVL: Record<LogLevel, number> = {
 
 function envLevel(): LogLevel {
   const l = (process.env.LOG_LEVEL || "").toLowerCase();
-  if (l === "error" || l === "warn" || l === "info" || l === "debug" || l === "silent") return l;
+  if (l === "error" || l === "warn" || l === "info" || l === "debug" || l === "silent") {
+    return l;
+  }
   return process.env.NODE_ENV === "production" ? "info" : "debug";
 }
 
@@ -47,7 +49,6 @@ function toErrorLike(e: unknown): ErrorLike {
       stack: e.stack,
     };
     if (anyErr.cause !== undefined) out.cause = anyErr.cause;
-    // Copia props enumerables útiles
     for (const k of Object.keys(anyErr)) {
       if (!(k in out)) (out as any)[k] = anyErr[k];
     }
@@ -64,15 +65,20 @@ function jsonLine(obj: unknown): string {
   try {
     return JSON.stringify(obj);
   } catch {
-    // Último recurso: stringify manual
     return `{"ts":"${new Date().toISOString()}","level":"error","msg":"[logger] JSON stringify failed"}`;
   }
 }
 
-function write(rec: LogRecord) {
-  // Una línea por log (JSON)
+function write(level: "error" | "warn" | "info" | "debug", rec: LogRecord) {
+  const line = jsonLine(rec);
+
+  // En plataformas (Vercel) es mejor separar streams por nivel
   // eslint-disable-next-line no-console
-  console.log(jsonLine(rec));
+  if (level === "error") console.error(line);
+  // eslint-disable-next-line no-console
+  else if (level === "warn") console.warn(line);
+  // eslint-disable-next-line no-console
+  else console.log(line);
 }
 
 function makeLogger(baseCtx?: Record<string, unknown>, minLevel: LogLevel = envLevel()) {
@@ -83,22 +89,31 @@ function makeLogger(baseCtx?: Record<string, unknown>, minLevel: LogLevel = envL
   }
 
   function emit(level: LogLevel, ...args: unknown[]) {
+    if (level === "silent") return;
     if (!allowed(level)) return;
 
     let msg: string | undefined;
-    let fields: Record<string, unknown> | undefined = undefined;
+    let fields: Record<string, unknown> | undefined;
 
     for (const arg of args) {
       if (arg == null) continue;
+
       if (typeof arg === "string") {
         msg = msg ? `${msg} ${arg}` : arg;
-      } else if (arg instanceof Error) {
-        fields = safeMerge(fields, { error: toErrorLike(arg) });
-      } else if (typeof arg === "object") {
-        fields = safeMerge(fields, arg as Record<string, unknown>);
-      } else {
-        fields = safeMerge(fields, { value: arg });
+        continue;
       }
+
+      if (arg instanceof Error) {
+        fields = safeMerge(fields, { error: toErrorLike(arg) });
+        continue;
+      }
+
+      if (typeof arg === "object") {
+        fields = safeMerge(fields, arg as Record<string, unknown>);
+        continue;
+      }
+
+      fields = safeMerge(fields, { value: arg });
     }
 
     const rec: LogRecord = {
@@ -109,7 +124,7 @@ function makeLogger(baseCtx?: Record<string, unknown>, minLevel: LogLevel = envL
       fields: fields && Object.keys(fields).length ? fields : undefined,
     };
 
-    write(rec);
+    write(level, rec);
   }
 
   return {
@@ -127,6 +142,7 @@ function makeLogger(baseCtx?: Record<string, unknown>, minLevel: LogLevel = envL
 const defaultCtx = {
   service: process.env.OTEL_SERVICE_NAME || "black-crow-web",
   env: process.env.NODE_ENV || "development",
+  pid: typeof process !== "undefined" ? process.pid : undefined,
 };
 
 export const logger = makeLogger(defaultCtx);

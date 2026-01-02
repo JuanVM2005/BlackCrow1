@@ -12,12 +12,16 @@ import {
   type Variants,
 } from "framer-motion";
 import type { ValueGridProps } from "../content/value-grid.mapper";
+import { IoLanguageSharp } from "react-icons/io5";
+
+// ✅ Anchor destino (Card 3)
+import { usePhoneAnchors } from "./usePhoneAnchors";
 
 /**
- * ValueGrid (v10)
- * - Mantiene layout + scroll-title.
- * - Entrada al “pasar por la sección”: cards aparecen 1 por 1 (stagger) con delay notorio.
- * - Fix TS: evita ease: number[] (usa cubicBezier()) + variants tipados.
+ * ValueGrid (v31)
+ * - Card 3 (penúltimo): reemplaza imagen por SLOT (anchor) para iPhone 3D (PhoneOverlay).
+ * - El anchor se registra SOLO en el layout activo (mobile o desktop) para evitar rects 0.
+ * - Card 4 (último): mantiene imagen centrada.
  */
 export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
   const [idea, uiux, responsive, optimization] = cards;
@@ -25,6 +29,9 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
 
   const prefersReducedMotion = useReducedMotion();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+  // ✅ Anchor destino del iPhone
+  const { targetRef } = usePhoneAnchors();
 
   // Detecta mobile
   const [isMobile, setIsMobile] = React.useState(false);
@@ -36,37 +43,62 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
     return () => mq.removeEventListener?.("change", update);
   }, []);
 
-  // Efecto scroll: activación un poco antes
+  // ✅ Registramos el target SOLO en el layout visible
+  const targetRefMobile = React.useCallback(
+    (el: HTMLElement | null) => {
+      if (!isMobile) return;
+      targetRef(el);
+    },
+    [isMobile, targetRef],
+  );
+
+  const targetRefDesktop = React.useCallback(
+    (el: HTMLElement | null) => {
+      if (isMobile) return;
+      targetRef(el);
+    },
+    [isMobile, targetRef],
+  );
+
+  // Scroll
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start 8%", "end 12%"],
   });
 
-  const scale = useTransform(scrollYProgress, [0, 0.1, 1], [1, 1, 0.7]);
-  const y = useTransform(scrollYProgress, [0, 0.1, 1], [0, 0, 64]);
-  const opacity = useTransform(scrollYProgress, [0, 0.55, 0.82], [1, 1, 0]);
+  // Desktop: desaparece antes
+  const scale = useTransform(scrollYProgress, [0, 0.1, 0.42], [1, 1, 0.72]);
+  const y = useTransform(scrollYProgress, [0, 0.1, 0.42], [0, 0, 72]);
+  const opacity = useTransform(scrollYProgress, [0, 0.18, 0.38], [1, 1, 0]);
+
+  // Mobile: también desaparece antes
+  const mScale = useTransform(scrollYProgress, [0, 0.14, 0.44], [1, 1, 0.92]);
+  const mY = useTransform(scrollYProgress, [0, 0.14, 0.44], [0, 0, 18]);
+  const mOpacity = useTransform(scrollYProgress, [0, 0.16, 0.36], [1, 1, 0]);
 
   const h3Rect =
     "font-semibold text-[clamp(1.5rem,2.6vw,2rem)] text-[var(--text)]";
   const h3Square =
     "font-semibold text-[clamp(1.5rem,2.6vw,2rem)] text-[var(--text)] text-center";
 
-  const body =
-    "text-[var(--text)] whitespace-pre-line text-[clamp(1rem,1.8vw,1.1rem)]";
+  // Body grande (cards 2 y 3)
+  const bodyBig =
+    "text-[var(--text)] whitespace-pre-line font-medium text-[clamp(1.75rem,3.2vw,2.55rem)] leading-[1.05]";
 
+  // Body párrafo (cards 1 y 4)
+  const bodyJustify =
+    "text-[var(--text)] text-[clamp(1rem,1.8vw,1.1rem)] leading-[1.35] text-justify [text-wrap:pretty] [hyphens:auto]";
+
+  // CMS data (tipado seguro con el VM actual)
   const cmsData =
     uiux.cms ??
     (uiux.chipItems && uiux.chipItems.length
       ? {
           title: uiux.chipTitle ?? "CMS",
-          items: uiux.chipItems.map((label, i) => ({
-            label,
-            icon: uiux.chipIcons?.[i],
-          })),
+          items: uiux.chipItems.map((label) => ({ label })),
         }
       : undefined);
 
-  // ===== Entrada 1x1 (stagger) con delay más notorio =====
   const EASE = React.useMemo(() => cubicBezier(0.2, 0.8, 0.2, 1), []);
 
   const gridContainerVariants = React.useMemo<Variants>(() => {
@@ -78,12 +110,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
     }
     return {
       hidden: {},
-      show: {
-        transition: {
-          delayChildren: 0.28, // más delay general
-          staggerChildren: 0.16, // más separación entre cards
-        },
-      },
+      show: { transition: { delayChildren: 0.28, staggerChildren: 0.16 } },
     };
   }, [prefersReducedMotion]);
 
@@ -100,7 +127,6 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
         },
       };
     }
-
     return {
       hidden: { opacity: 0, y: 22, scale: 0.985, filter: "blur(7px)" },
       show: {
@@ -113,7 +139,6 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
     };
   }, [EASE, prefersReducedMotion]);
 
-  // Dispara cuando ya está más dentro de viewport (se nota más el delay)
   const viewport = React.useMemo(() => ({ once: true, amount: 0.34 }), []);
 
   return (
@@ -122,7 +147,6 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
         ref={containerRef}
         className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 md:py-10"
       >
-        {/* Título principal — detrás del grid */}
         <header className="mb-4 md:mb-6 sticky top-10 md:top-12 z-0">
           {isMobile ? (
             <motion.h2
@@ -134,6 +158,11 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                 prefersReducedMotion
                   ? undefined
                   : { delay: 0.22, duration: 0.65, ease: EASE }
+              }
+              style={
+                prefersReducedMotion
+                  ? undefined
+                  : { opacity: mOpacity, y: mY, scale: mScale }
               }
             >
               {titleLines.map((line, i) => (
@@ -163,7 +192,6 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
           )}
         </header>
 
-        {/* GRID por encima del título */}
         <div className="relative z-1">
           {/* ===== MOBILE ===== */}
           <motion.div
@@ -173,7 +201,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
             whileInView="show"
             viewport={viewport}
           >
-            {/* 1) RECTÁNGULO en sm+ (full width), en XS sigue cuadrado */}
+            {/* 1 */}
             <motion.div
               variants={gridItemVariants}
               className="aspect-square sm:col-span-2 sm:aspect-video"
@@ -181,124 +209,76 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
               <Card
                 ariaLabel={idea.title}
                 className="h-full"
-                glows={[
-                  {
-                    at: "0% 100%",
-                    size: "460px 280px",
-                    color: "var(--primary-700)",
-                    intensity: 40,
-                    fade: 60,
-                  },
-                  {
-                    at: "100% 100%",
-                    size: "260px 170px",
-                    color: "var(--accent-500)",
-                    intensity: 34,
-                    fade: 58,
-                  },
-                ]}
+                glows={buildPastelGlows("a")}
               >
                 <div className="flex h-full flex-col px-2">
                   <h3 className={h3Square}>{idea.title}</h3>
+
                   {idea.body ? (
                     <div className="mt-auto w-full pb-1.5">
-                      <p className={`text-left ${body}`}>{idea.body}</p>
+                      <p className={bodyJustify}>{toJustifyText(idea.body)}</p>
                     </div>
                   ) : null}
                 </div>
               </Card>
             </motion.div>
 
-            {/* 2) CUADRADO */}
+            {/* 2 */}
             <motion.div variants={gridItemVariants} className="aspect-square">
               <Card
                 ariaLabel={uiux.title}
                 className="relative h-full"
-                glows={[
-                  {
-                    at: "100% 0%",
-                    size: "520px 320px",
-                    color: "var(--primary-600)",
-                    intensity: 42,
-                    fade: 58,
-                  },
-                  {
-                    at: "100% 50%",
-                    size: "300px 240px",
-                    color: "var(--accent-500)",
-                    intensity: 36,
-                    fade: 56,
-                  },
-                ]}
+                glows={buildPastelGlows("b")}
               >
                 <div className="flex h-full flex-col px-2">
                   <h3 className={h3Square}>{uiux.title}</h3>
-
-                  {uiux.body ? (
-                    <div className="mt-auto pb-1.5">
-                      <p className={`text-left ${body}`}>{uiux.body}</p>
-                    </div>
-                  ) : null}
 
                   {cmsData ? (
                     <div className="mt-2">
                       <CMSWidgetInline cms={cmsData} />
                     </div>
                   ) : null}
+
+                  <div className="flex-1" />
+
+                  {uiux.body ? (
+                    <div className="mt-auto pb-0">
+                      <p className={`text-left ${bodyBig}`}>{uiux.body}</p>
+                    </div>
+                  ) : null}
                 </div>
               </Card>
             </motion.div>
 
-            {/* 3) CUADRADO */}
+            {/* 3 (SLOT 3D) */}
             <motion.div variants={gridItemVariants} className="aspect-square">
               <Card
                 ariaLabel={responsive.title}
                 className="h-full"
-                glows={[
-                  {
-                    at: "0% 50%",
-                    size: "520px 340px",
-                    color: "var(--primary-600)",
-                    intensity: 38,
-                    fade: 60,
-                  },
-                  {
-                    at: "50% 100%",
-                    size: "280px 180px",
-                    color: "var(--accent-500)",
-                    intensity: 30,
-                    fade: 58,
-                  },
-                ]}
+                glows={buildPastelGlows("c")}
               >
                 <div className="flex h-full flex-col px-2">
                   <h3 className={h3Square}>{responsive.title}</h3>
 
-                  {responsive.image ? (
-                    <div className="relative mt-2 w-full flex-1">
-                      <div className="relative h-full w-full">
-                        <Image
-                          src={responsive.image.src}
-                          alt={responsive.image.alt}
-                          fill
-                          sizes="(min-width:640px) 44vw, 92vw"
-                          className="object-contain"
-                          priority={false}
-                        />
-                      </div>
-                    </div>
-                  ) : null}
+                  {/* ✅ Slot destino para el iPhone 3D (PhoneOverlay) */}
+                  <div className="relative mt-2 w-full flex-1">
+                    <div
+                      ref={targetRefMobile}
+                      aria-hidden="true"
+                      className="absolute inset-0"
+                    />
+                  </div>
 
                   {responsive.body ? (
-                    <div className="mt-auto pb-1.5">
-                      <p className={`text-left ${body}`}>{responsive.body}</p>
+                    <div className="mt-auto pb-0">
+                      <p className={`text-left ${bodyBig}`}>{responsive.body}</p>
                     </div>
                   ) : null}
                 </div>
               </Card>
             </motion.div>
 
-            {/* 4) RECTÁNGULO en sm+ (full width), en XS sigue cuadrado */}
+            {/* 4 */}
             <motion.div
               variants={gridItemVariants}
               className="aspect-square sm:col-span-2 sm:aspect-video"
@@ -306,22 +286,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
               <Card
                 ariaLabel={optimization.title}
                 className="relative h-full overflow-hidden"
-                glows={[
-                  {
-                    at: "100% 100%",
-                    size: "300px 190px",
-                    color: "var(--primary-600)",
-                    intensity: 30,
-                    fade: 56,
-                  },
-                  {
-                    at: "100% 100%",
-                    size: "260px 170px",
-                    color: "var(--accent-500)",
-                    intensity: 36,
-                    fade: 54,
-                  },
-                ]}
+                glows={buildPastelGlows("d")}
               >
                 <div className="flex h-full flex-col px-2">
                   <h3 className={h3Square}>{optimization.title}</h3>
@@ -343,7 +308,9 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
 
                   {optimization.body ? (
                     <div className="mt-auto pb-1.5">
-                      <p className={`text-left ${body}`}>{optimization.body}</p>
+                      <p className={bodyJustify}>
+                        {toJustifyText(optimization.body)}
+                      </p>
                     </div>
                   ) : null}
                 </div>
@@ -361,36 +328,29 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
           >
             {/* === FILA SUPERIOR === */}
             <div className="grid gap-3 md:gap-4 md:grid-cols-[minmax(80px,0.7fr)_minmax(280px,1.6fr)] lg:grid-cols-[minmax(100px,0.7fr)_minmax(400px,1.7fr)]">
-              <motion.div variants={gridItemVariants} className="md:aspect-square">
+              <motion.div
+                variants={gridItemVariants}
+                className="md:aspect-square"
+              >
                 <Card
                   ariaLabel={idea.title}
                   className="h-full"
-                  glows={[
-                    {
-                      at: "0% 100%",
-                      size: "460px 280px",
-                      color: "var(--primary-700)",
-                      intensity: 40,
-                      fade: 60,
-                    },
-                    {
-                      at: "100% 100%",
-                      size: "260px 170px",
-                      color: "var(--accent-500)",
-                      intensity: 34,
-                      fade: 58,
-                    },
-                  ]}
+                  glows={buildPastelGlows("a")}
                 >
                   <div className="flex h-full flex-col px-2 md:px-3">
                     <h3 className={h3Square}>{idea.title}</h3>
-                    {idea.body && (
-                      <div className="mt-auto w-full flex justify-center pb-1.5 md:pb-2">
-                        <div className="w-[88%] sm:w-[84%] md:w-[78%]">
-                          <p className={`text-left ${body}`}>{idea.body}</p>
+                    <div className="flex-1" />
+                    <div className="pb-2 md:pb-3">
+                      {idea.body && (
+                        <div className="w-full flex justify-center">
+                          <div className="w-[88%] sm:w-[84%] md:w-[78%]">
+                            <p className={bodyJustify}>
+                              {toJustifyText(idea.body)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </Card>
               </motion.div>
@@ -399,31 +359,18 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                 <Card
                   ariaLabel={uiux.title}
                   className="relative h-full"
-                  glows={[
-                    {
-                      at: "100% 0%",
-                      size: "520px 320px",
-                      color: "var(--primary-600)",
-                      intensity: 42,
-                      fade: 58,
-                    },
-                    {
-                      at: "100% 50%",
-                      size: "300px 240px",
-                      color: "var(--accent-500)",
-                      intensity: 36,
-                      fade: 56,
-                    },
-                  ]}
+                  glows={buildPastelGlows("b")}
                 >
                   <div className="flex h-full flex-col pl-2 md:pl-3 pr-32 md:pr-40">
                     <h3 className={h3Rect}>{uiux.title}</h3>
-                    {uiux.body && (
-                      <div className="mt-auto pb-1.5 md:pb-2">
-                        <p className={`text-left ${body}`}>{uiux.body}</p>
-                      </div>
-                    )}
+                    <div className="flex-1" />
+                    <div className="pb-2 md:pb-3">
+                      {uiux.body && (
+                        <p className={`text-left ${bodyBig}`}>{uiux.body}</p>
+                      )}
+                    </div>
                   </div>
+
                   {cmsData ? <CMSWidget cms={cmsData} /> : null}
                 </Card>
               </motion.div>
@@ -431,97 +378,78 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
 
             {/* === FILA INFERIOR (invertida) === */}
             <div className="mt-3 md:mt-4 grid gap-3 md:gap-4 md:grid-cols-[minmax(280px,1.6fr)_minmax(80px,0.7fr)] lg:grid-cols-[minmax(400px,1.7fr)_minmax(100px,0.7fr)]">
+              {/* 3 (penúltimo) */}
               <motion.div variants={gridItemVariants} className="md:h-full">
                 <Card
                   ariaLabel={responsive.title}
                   className="h-full"
-                  glows={[
-                    {
-                      at: "0% 50%",
-                      size: "520px 340px",
-                      color: "var(--primary-600)",
-                      intensity: 38,
-                      fade: 60,
-                    },
-                    {
-                      at: "50% 100%",
-                      size: "280px 180px",
-                      color: "var(--accent-500)",
-                      intensity: 30,
-                      fade: 58,
-                    },
-                  ]}
+                  glows={buildPastelGlows("c")}
                 >
                   <div className="grid h-full gap-2 md:gap-3 lg:grid-cols-2 items-stretch">
-                    <div className="flex h-full flex-col justify-between px-2 md:px-3">
+                    <div className="flex h-full flex-col px-2 md:px-3">
                       <h3 className={h3Rect}>{responsive.title}</h3>
-                      {responsive.body && (
-                        <div className="pb-1.5 md:pb-2">
-                          <p className={`text-left ${body}`}>{responsive.body}</p>
-                        </div>
-                      )}
+                      <div className="flex-1" />
+                      <div className="pb-2 md:pb-3">
+                        {responsive.body && (
+                          <p className={`text-left ${bodyBig}`}>
+                            {responsive.body}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {responsive.image && (
-                      <div className="relative grid place-items-end">
-                        <div className="relative w-full md:w-[72%] aspect-video">
-                          <Image
-                            src={responsive.image.src}
-                            alt={responsive.image.alt}
-                            fill
-                            sizes="(min-width:1024px) 42vw, (min-width:768px) 52vw, 92vw"
-                            className="object-contain"
-                            priority={false}
-                          />
-                        </div>
+                    {/* ✅ Slot destino para el iPhone 3D (PhoneOverlay) */}
+                    <div className="relative grid place-items-center">
+                      <div
+                        className="relative w-[92%] md:w-[88%] lg:w-[96%] aspect-4/3"
+                        aria-hidden="true"
+                      >
+                        <div
+                          ref={targetRefDesktop}
+                          aria-hidden="true"
+                          className="absolute inset-0"
+                        />
                       </div>
-                    )}
+                    </div>
                   </div>
                 </Card>
               </motion.div>
 
+              {/* 4 (último) */}
               <motion.div variants={gridItemVariants} className="md:aspect-square">
                 <Card
                   ariaLabel={optimization.title}
                   className="relative h-full overflow-hidden"
-                  glows={[
-                    {
-                      at: "100% 100%",
-                      size: "300px 190px",
-                      color: "var(--primary-600)",
-                      intensity: 30,
-                      fade: 56,
-                    },
-                    {
-                      at: "100% 100%",
-                      size: "260px 170px",
-                      color: "var(--accent-500)",
-                      intensity: 36,
-                      fade: 54,
-                    },
-                  ]}
+                  glows={buildPastelGlows("d")}
                 >
                   <div className="flex h-full flex-col px-2 md:px-3">
                     <h3 className={h3Square}>{optimization.title}</h3>
-                    {optimization.body && (
-                      <div className="mt-auto w-full flex justify-center pb-1.5 md:pb-2">
-                        <div className="w-[88%] sm:w-[84%] md:w-[78%]">
-                          <p className={`text-left ${body}`}>{optimization.body}</p>
+                    <div className="flex-1" />
+                    <div className="pb-2 md:pb-3">
+                      {optimization.body && (
+                        <div className="w-full flex justify-center">
+                          <div className="w-[88%] sm:w-[84%] md:w-[78%]">
+                            <p className={bodyJustify}>
+                              {toJustifyText(optimization.body)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {optimization.image && (
-                    <div className="pointer-events-none absolute bottom-2 right-2 w-[42%] max-w-[220px] aspect-square">
-                      <Image
-                        src={optimization.image.src}
-                        alt=""
-                        fill
-                        sizes="(min-width:1024px) 20vw, (min-width:768px) 24vw, 40vw"
-                        className="object-contain opacity-95"
-                        priority={false}
-                      />
+                    <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                      <div className="relative w-[62%] max-w-[320px] aspect-square">
+                        <Image
+                          src={optimization.image.src}
+                          alt=""
+                          fill
+                          sizes="(min-width:1024px) 20vw, (min-width:768px) 24vw, 40vw"
+                          className="object-contain opacity-95"
+                          priority={false}
+                        />
+                      </div>
                     </div>
                   )}
                 </Card>
@@ -534,67 +462,101 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
   );
 }
 
-/* ---------- CMS widget (desktop absolute) ---------- */
+function toJustifyText(text: string) {
+  return text.replace(/\s*\n+\s*/g, " ").trim();
+}
+
+/* ------------------------------------------------------------------ */
+/* CMS widget (desktop) */
+/* ------------------------------------------------------------------ */
 function CMSWidget({
   cms,
 }: {
-  cms: { title: string; items: { label: string; icon?: string }[] };
+  cms: { title: string; items: { label: string }[] };
 }) {
+  const items = cms.items.slice(0, 2);
+
   return (
-    <aside
-      className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 w-36 sm:w-44 rounded-2xl border border-(--border) bg-(--surface-muted) p-2.5"
-      style={{ boxShadow: "var(--shadow-xs)" }}
-      role="note"
-      aria-label={cms.title}
-    >
-      <div className="mb-2 flex items-center justify-between">
-        <div className="text-sm font-semibold text-(--text)">{cms.title}</div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {cms.items.slice(0, 4).map((item, i) => (
-          <div
-            key={`${item.label}-${i}`}
-            className="flex flex-col items-center text-center"
-          >
-            {item.icon ? <img src={item.icon} alt="" className="mb-1 h-5 w-5" /> : null}
-            <span className="text-[0.72rem] leading-4 text-(--text)">{item.label}</span>
+    <>
+      <aside
+        className="valuegrid-cms-widget absolute right-2 sm:right-3 w-40 sm:w-44 rounded-2xl border border-(--border) bg-(--surface-muted) p-3"
+        style={{ boxShadow: "var(--shadow-xs)" }}
+        role="note"
+        aria-label={cms.title}
+      >
+        <div className="flex h-full flex-col">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-sm font-semibold text-(--text)">CMS</div>
+            <IoLanguageSharp className="h-10 w-10 text-(--text)" />
           </div>
-        ))}
-      </div>
-    </aside>
+
+          <div className="mt-auto">
+            <div className="grid grid-cols-2 gap-[0.15rem]">
+              {items.map((item, i) => (
+                <div
+                  key={`${item.label}-${i}`}
+                  className="text-[0.75rem] leading-4 text-(--text)"
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <style jsx>{`
+        .valuegrid-cms-widget {
+          bottom: calc(var(--spacing) * 2);
+        }
+      `}</style>
+    </>
   );
 }
 
-/* ---------- CMS widget (mobile inline) ---------- */
+/* ------------------------ */
+/* CMS widget (mobile inline) */
+/* ------------------------ */
 function CMSWidgetInline({
   cms,
 }: {
-  cms: { title: string; items: { label: string; icon?: string }[] };
+  cms: { title: string; items: { label: string }[] };
 }) {
+  const items = cms.items.slice(0, 2);
+
   return (
     <div
-      className="w-full rounded-2xl border border-(--border) bg-(--surface-muted) p-2"
+      className="w-full rounded-2xl border border-(--border) bg-(--surface-muted) p-3"
       style={{ boxShadow: "var(--shadow-xs)" }}
       role="note"
       aria-label={cms.title}
     >
-      <div className="mb-2 text-sm font-semibold text-(--text)">{cms.title}</div>
-      <div className="grid grid-cols-2 gap-2">
-        {cms.items.slice(0, 4).map((item, i) => (
-          <div
-            key={`${item.label}-${i}`}
-            className="flex flex-col items-center text-center"
-          >
-            {item.icon ? <img src={item.icon} alt="" className="mb-1 h-5 w-5" /> : null}
-            <span className="text-[0.72rem] leading-4 text-(--text)">{item.label}</span>
+      <div className="flex flex-col">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-sm font-semibold text-(--text)">CMS</div>
+          <IoLanguageSharp className="h-10 w-10 text-(--text)" />
+        </div>
+
+        <div className="mt-auto">
+          <div className="grid grid-cols-2 gap-[0.15rem]">
+            {items.map((item, i) => (
+              <div
+                key={`${item.label}-${i}`}
+                className="text-[0.75rem] leading-4 text-(--text)"
+              >
+                {item.label}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
 }
 
-/* ---------- UI primitive local + multi-glow overlays ---------- */
+/* -------------------------------------------------- */
+/* Glows: pastel — SOLO hover */
+/* -------------------------------------------------- */
 type GlowSpec = {
   at: string;
   size: string;
@@ -603,23 +565,48 @@ type GlowSpec = {
   fade?: number;
 };
 
+function buildPastelGlows(seed: "a" | "b" | "c" | "d"): GlowSpec[] {
+  const presets: Record<typeof seed, GlowSpec[]> = {
+    a: [
+      { at: "20% 88%", size: "760px 560px", color: "#B56BFF", intensity: 40, fade: 72 },
+      { at: "92% 82%", size: "720px 540px", color: "#FF6FA0", intensity: 38, fade: 74 },
+      { at: "60% 12%", size: "760px 560px", color: "#FF8A66", intensity: 30, fade: 76 },
+    ],
+    b: [
+      { at: "92% 14%", size: "760px 560px", color: "#FF6FA0", intensity: 40, fade: 72 },
+      { at: "12% 62%", size: "720px 540px", color: "#B56BFF", intensity: 38, fade: 74 },
+      { at: "56% 100%", size: "760px 560px", color: "#FF8A66", intensity: 30, fade: 76 },
+    ],
+    c: [
+      { at: "12% 45%", size: "760px 560px", color: "#B56BFF", intensity: 38, fade: 74 },
+      { at: "78% 100%", size: "720px 540px", color: "#FF6FA0", intensity: 38, fade: 74 },
+      { at: "95% 14%", size: "760px 560px", color: "#FF8A66", intensity: 30, fade: 78 },
+    ],
+    d: [
+      { at: "88% 90%", size: "760px 560px", color: "#FF6FA0", intensity: 38, fade: 74 },
+      { at: "14% 86%", size: "720px 540px", color: "#B56BFF", intensity: 34, fade: 76 },
+      { at: "92% 14%", size: "760px 560px", color: "#FF8A66", intensity: 30, fade: 78 },
+    ],
+  };
+  return presets[seed];
+}
+
+/* ---------- Card ---------- */
 type CardProps = React.PropsWithChildren<{
   className?: string;
-  as?: "div" | "article" | "section";
   ariaLabel?: string;
   glows?: GlowSpec[];
 }>;
 
-function Card({
-  className,
-  as: Tag = "article",
-  ariaLabel,
-  glows,
-  children,
-}: CardProps) {
+function Card({ className, ariaLabel, glows, children }: CardProps) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <Tag
+    <motion.article
       aria-label={ariaLabel}
+      initial="rest"
+      animate="rest"
+      whileHover={prefersReducedMotion ? undefined : "hover"}
       className={[
         "group relative overflow-hidden isolate",
         "rounded-4xl",
@@ -632,14 +619,16 @@ function Card({
       ].join(" ")}
       style={{ boxShadow: "var(--shadow-xs)" }}
     >
-      <div className="relative z-2">{children}</div>
-      {Array.isArray(glows) && glows.map((g, i) => <GlowOverlay key={i} spec={g} />)}
-    </Tag>
+      <div className="relative z-2 h-full">{children}</div>
+      {Array.isArray(glows) &&
+        glows.map((g, i) => <GlowOverlay key={i} spec={g} />)}
+    </motion.article>
   );
 }
 
 function GlowOverlay({ spec }: { spec: GlowSpec }) {
-  const fade = spec.fade ?? 70;
+  const fade = spec.fade ?? 76;
+
   const backgroundImage = `
     radial-gradient(
       ${spec.size} at ${spec.at},
@@ -649,16 +638,17 @@ function GlowOverlay({ spec }: { spec: GlowSpec }) {
   `;
 
   return (
-    <span
+    <motion.span
       aria-hidden="true"
-      className="
-        pointer-events-none absolute inset-0 z-1
-        opacity-0 group-hover:opacity-95
-        transition-opacity duration-250 ease-out
-        will-change-opacity
-        motion-reduce:transition-none
-      "
+      className="pointer-events-none absolute z-1 inset-[-22%] will-change-opacity"
       style={{ backgroundImage }}
+      variants={{
+        rest: { opacity: 0 },
+        hover: {
+          opacity: 0.85,
+          transition: { duration: 0.18, ease: "easeOut" },
+        },
+      }}
     />
   );
 }

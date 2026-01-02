@@ -30,8 +30,8 @@ export default function GlobalError(props: {
               onClick={() => reset()}
               className="mt-6 inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium
                          hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2
-                         border-[color:var(--border)] text-[color:var(--text)] 
-                         bg-[color:var(--surface-raised)] focus:ring-[color:var(--ring)]"
+                         border-(--border) text-(--text) 
+                         bg-(--surface-raised) focus:ring-(--ring)"
             >
               Reintentar
             </button>

@@ -7,19 +7,27 @@
     "items": [
       {
         "title": "Logo & Branding",
-        "description": "More than a logo—it’s your brand’s face, voice, and personality."
+        "description": "More than a logo—it’s your brand’s face, voice, and personality.",
+        "image": { "src": "/images/capabilities/branding.png", "alt": "Branding" }
+
       },
       {
         "title": "Web Design",
-        "description": "Websites that don’t just exist—they engage, inspire, and elevate."
+        "description": "Websites that don’t just exist—they engage, inspire, and elevate.",
+        "image": { "src": "/images/capabilities/web-design.png", "alt": "Web design" }
+
       },
       {
         "title": "Development",
-        "description": "Clean, fast code where every pixel and feature counts."
+        "description": "Clean, fast code where every pixel and feature counts.",
+        "image": { "src": "/images/capabilities/development.png", "alt": "Development" }
+
       },
       {
         "title": "SEO & Performance",
-        "description": "Speed, indexing, and metrics to grow with data—not assumptions."
-      }
+        "description": "Speed, indexing, and metrics to grow with data—not assumptions.",
+        "image": { "src": "/images/capabilities/seo.png", "alt": "SEO" }
+      }  
+      
     ]
   }

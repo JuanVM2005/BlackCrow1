@@ -3,33 +3,29 @@
   "cards": [
     {
       "title": "De idea a realidad",
-      "body": "Definimos el propósito de tu\nweb y cómo alinearla con tus\nmetas."
+      "body": "Definimos el propósito de tu web y lo alineamos con tus metas."
     },
     {
-      "title": "Diseño UI/UX Intuitivo",
+      "title": "Diseño UI/UX intuitivo",
       "body": "Diseño y desarrollo\na medida",
       "widget": {
         "kind": "cms",
         "title": "CMS",
         "items": [
-          { "label": "Gestión de web", "icon": "/icons/cms-manage.svg" },
-          { "label": "Multi-Lenguaje", "icon": "/icons/cms-i18n.svg" }
+          { "label": "Gestión del sitio", "icon": "/icons/cms-manage.svg" },
+          { "label": "Multi-idioma", "icon": "/icons/cms-i18n.svg" }
         ]
       }
     },
     {
       "title": "Responsivo",
-      "body": "Compatible con dispositivos móviles",
-      "image": {
-        "src": "/images/value-grid/phone.webp",
-        "alt": "Mockup de teléfono mostrando diseño Black Crow"
-      }
+      "body": "Compatible y optimizado para móviles."
     },
     {
-      "title": "Optimización Total",
-      "body": "Velocidad, SEO y rendimiento\nal máximo nivel.",
+      "title": "Optimización total",
+      "body": "Velocidad, SEO y rendimiento al máximo nivel.",
       "image": {
-        "src": "/images/value-grid/rocket.webp",
+        "src": "/images/value-grid/cohete.svg",
         "alt": "Cohete despegando representando alto rendimiento"
       }
     }

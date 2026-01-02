@@ -25,7 +25,14 @@ export type HoverPreviewProps = {
 
 /**
  * Contenedor flotante que sigue al puntero con movimiento suave
- * y muestra una imagen según el índice activo. No captura eventos.
+ * y muestra una imagen según el índice activo.
+ * - No captura eventos.
+ * - Incluye “swing” tipo cordel (columpio) basado en la velocidad del mouse.
+ *
+ * ✅ Fix hard:
+ * - Evita crashes si refs son null (hot reload / transitions)
+ * - Cancela RAFs correctamente
+ * - No deja “colgado” el ángulo al ocultar
  */
 export default function HoverPreview({
   activeIndex,
@@ -36,31 +43,40 @@ export default function HoverPreview({
   enabled,
   className = "",
 }: HoverPreviewProps) {
+  const canRender = useCanRender(enabled);
   const [visible, setVisible] = React.useState(false);
 
-  // Autodetección: solo en punteros "fine" (mouse) y sin reduced motion.
-  const canRender = useCanRender(enabled);
-
-  // Posición actual (suavizada) del contenedor.
+  // refs de estado interno (no causan renders)
   const posRef = React.useRef<Point>({ x: 0, y: 0 });
   const targetRef = React.useRef<Point | null>(null);
-  const rafRef = React.useRef<number | null>(null);
+  const lastRef = React.useRef<Point>({ x: 0, y: 0 });
+  const swingRef = React.useRef({ rotZ: 0, rotX: 0 });
 
-  // Actualiza el target cuando cambia el punto.
+  const rafMoveRef = React.useRef<number | null>(null);
+  const rafRenderRef = React.useRef<number | null>(null);
+
+  // DOM refs
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const boxRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Actualiza target + visibilidad
   React.useEffect(() => {
     targetRef.current = point;
-    // Muestra/oculta según haya hover y condiciones
-    setVisible(Boolean(point) && canRender && activeIndex !== null && !!images[activeIndex ?? -1]);
+
+    const ok =
+      Boolean(point) &&
+      canRender &&
+      activeIndex !== null &&
+      !!images[activeIndex ?? -1];
+
+    setVisible(ok);
   }, [point, canRender, activeIndex, images]);
 
-  // Animación con rAF + lerp
+  // Smooth move loop (lerp hacia el cursor)
   React.useEffect(() => {
     if (!visible) {
-      // Si se oculta, cancela cualquier rAF pendiente
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
+      if (rafMoveRef.current) cancelAnimationFrame(rafMoveRef.current);
+      rafMoveRef.current = null;
       return;
     }
 
@@ -68,65 +84,127 @@ export default function HoverPreview({
       const t = targetRef.current;
       if (t) {
         const c = posRef.current;
-        const nx = lerp(c.x, t.x, easing);
-        const ny = lerp(c.y, t.y, easing);
-        posRef.current = { x: nx, y: ny };
+        posRef.current = {
+          x: lerp(c.x, t.x, easing),
+          y: lerp(c.y, t.y, easing),
+        };
       }
-      rafRef.current = requestAnimationFrame(tick);
+      rafMoveRef.current = requestAnimationFrame(tick);
     };
 
-    rafRef.current = requestAnimationFrame(tick);
+    rafMoveRef.current = requestAnimationFrame(tick);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+      if (rafMoveRef.current) cancelAnimationFrame(rafMoveRef.current);
+      rafMoveRef.current = null;
     };
   }, [visible, easing]);
 
-  // Estilo transform en línea (evita re-render con uso de ref)
-  const ref = React.useRef<HTMLDivElement | null>(null);
+  // Render loop: translate + swing
   React.useEffect(() => {
-    if (!ref.current) return;
+    if (!visible) {
+      if (rafRenderRef.current) cancelAnimationFrame(rafRenderRef.current);
+      rafRenderRef.current = null;
+      return;
+    }
 
-    let raf: number | null = null;
+    // Ajustes “un poquito menos” (como lo tenías)
+    const MAX_ROT_Z = 36;
+    const MAX_ROT_X = 22;
+    const ROT_Z_MULT = 0.48;
+    const ROT_X_MULT = 0.24;
+    const SWING_EASE = 0.34;
+    const DAMP = 1.35;
+
     const render = () => {
-      if (!ref.current) return;
+      const wrap = wrapperRef.current;
+      const box = boxRef.current;
+
+      // ✅ Si se desmontó entre frames, paramos limpio
+      if (!wrap || !box) {
+        if (rafRenderRef.current) cancelAnimationFrame(rafRenderRef.current);
+        rafRenderRef.current = null;
+        return;
+      }
+
       const { x, y } = posRef.current;
-      // Centra el cuadrado respecto al cursor
+
+      // translate (centrado al cursor)
       const tx = x - size / 2;
       const ty = y - size / 2;
-      ref.current.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
-      raf = requestAnimationFrame(render);
+      wrap.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+
+      // velocidad estimada (delta por frame)
+      const dx = (x - lastRef.current.x) * DAMP;
+      const dy = (y - lastRef.current.y) * DAMP;
+      lastRef.current = { x, y };
+
+      // objetivo de rotación
+      const targetRotZ = clamp(dx * ROT_Z_MULT, -MAX_ROT_Z, MAX_ROT_Z);
+      const targetRotX = clamp(-dy * ROT_X_MULT, -MAX_ROT_X, MAX_ROT_X);
+
+      // suavizado tipo cordel
+      swingRef.current.rotZ = lerp(swingRef.current.rotZ, targetRotZ, SWING_EASE);
+      swingRef.current.rotX = lerp(swingRef.current.rotX, targetRotX, SWING_EASE);
+
+      // aplica rotación
+      box.style.transform = `rotateZ(${swingRef.current.rotZ}deg) rotateX(${swingRef.current.rotX}deg)`;
+
+      rafRenderRef.current = requestAnimationFrame(render);
     };
-    raf = requestAnimationFrame(render);
+
+    rafRenderRef.current = requestAnimationFrame(render);
+
     return () => {
-      if (raf) cancelAnimationFrame(raf);
+      if (rafRenderRef.current) cancelAnimationFrame(rafRenderRef.current);
+      rafRenderRef.current = null;
     };
-  }, [size]);
+  }, [visible, size]);
+
+  // Reset cuando se oculta (evita quedarse inclinado)
+  React.useEffect(() => {
+    if (visible) return;
+
+    lastRef.current = posRef.current;
+    swingRef.current = { rotZ: 0, rotX: 0 };
+
+    const box = boxRef.current;
+    if (box) box.style.transform = "rotateZ(0deg) rotateX(0deg)";
+  }, [visible]);
+
+  // Limpieza general por si unmount con RAF vivo
+  React.useEffect(() => {
+    return () => {
+      if (rafMoveRef.current) cancelAnimationFrame(rafMoveRef.current);
+      if (rafRenderRef.current) cancelAnimationFrame(rafRenderRef.current);
+      rafMoveRef.current = null;
+      rafRenderRef.current = null;
+    };
+  }, []);
 
   const src = activeIndex !== null ? images[activeIndex] : undefined;
 
   return (
     <div
       aria-hidden="true"
-      ref={ref}
+      ref={wrapperRef}
       className={[
         "pointer-events-none fixed top-0 left-0 z-40",
         "transition-opacity duration-200 ease-out will-change-transform",
         visible ? "opacity-100" : "opacity-0",
         className,
       ].join(" ")}
-      style={{
-        width: size,
-        height: size,
-      }}
+      style={{ width: size, height: size }}
     >
-      {/* Caja visual */}
       <div
+        ref={boxRef}
         className={[
           "relative w-full h-full overflow-hidden",
-          // Bordes no tan redondos + borde según tokens
           "rounded-xl border border-border bg-background shadow-lg",
         ].join(" ")}
+        style={{
+          transformOrigin: "50% 0%",
+          willChange: "transform",
+        }}
       >
         {src ? (
           <Image
@@ -150,6 +228,10 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * clamp01(t);
 }
 
+function clamp(v: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, v));
+}
+
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
@@ -158,6 +240,8 @@ function clamp01(v: number) {
  * Determina si debemos renderizar el overlay:
  * - Si `enabled` está definido, respeta ese valor.
  * - Si no, requiere pointer:fine y no prefers-reduced-motion.
+ *
+ * ✅ Incluye fallback Safari legacy.
  */
 function useCanRender(enabled?: boolean) {
   const [ok, setOk] = React.useState(false);
@@ -171,21 +255,30 @@ function useCanRender(enabled?: boolean) {
       setOk(false);
       return;
     }
+
     const mqPointer = window.matchMedia("(pointer: fine)");
     const mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const compute = () => setOk(mqPointer.matches && !mqMotion.matches);
     compute();
 
-    const onPointer = () => compute();
-    const onMotion = () => compute();
+    const add = (mq: MediaQueryList, fn: () => void) => {
+      if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
+      // eslint-disable-next-line deprecation/deprecation
+      else mq.addListener(fn);
+    };
+    const remove = (mq: MediaQueryList, fn: () => void) => {
+      if (typeof mq.removeEventListener === "function") mq.removeEventListener("change", fn);
+      // eslint-disable-next-line deprecation/deprecation
+      else mq.removeListener(fn);
+    };
 
-    mqPointer.addEventListener?.("change", onPointer);
-    mqMotion.addEventListener?.("change", onMotion);
+    add(mqPointer, compute);
+    add(mqMotion, compute);
 
     return () => {
-      mqPointer.removeEventListener?.("change", onPointer);
-      mqMotion.removeEventListener?.("change", onMotion);
+      remove(mqPointer, compute);
+      remove(mqMotion, compute);
     };
   }, [enabled]);
 

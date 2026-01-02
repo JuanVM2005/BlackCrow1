@@ -14,13 +14,12 @@ export type BuildOgImageParams = {
   badge?: string;
 };
 
-/** Convierte una ruta relativa en URL absoluta usando site.url (o NEXT_PUBLIC_SITE_URL como fallback) */
+/** Convierte una ruta relativa en URL absoluta usando NEXT_PUBLIC_SITE_URL (o site.url) */
 export function buildAbsoluteUrl(path: string): string {
-  const base = (
-    site?.url ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || site.url).replace(
+    /\/$/,
+    "",
+  );
   const rel = path.startsWith("/") ? path : `/${path}`;
   return `${base}${rel}`;
 }

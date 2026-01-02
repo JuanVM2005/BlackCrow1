@@ -38,7 +38,7 @@ export default function ServiceSwitcher({
 
   return (
     <nav aria-label={ariaLabel} className={cn("w-full", className)}>
-      <ul role="list" className="flex flex-wrap gap-[var(--radius-sm)]">
+      <ul role="list" className="flex flex-wrap gap-(--radius-sm)">
         {items.map((item) => {
           const isActive = activeSlug ? item.slug === activeSlug : false;
 
@@ -52,17 +52,17 @@ export default function ServiceSwitcher({
                   padX,
                   padY,
                   // Base: chip “ghost” sin fondo
-                  "bg-[color:transparent] border-[var(--border-card)]",
+                  "bg-transparent border-(--border-card)",
                   "hover:opacity-100 active:scale-[0.98]",
                   // Activo: superficie clara para contraste
-                  isActive && "bg-[var(--surface)] border-[var(--border)]",
+                  isActive && "bg-(--surface) border-(--border)",
                 )}
                 style={{ boxShadow: isActive ? "var(--shadow-sm)" : "none" }}
               >
                 <Typography.Text
                   as="span"
                   weight={isActive ? "semibold" : "medium"}
-                  className={cn(isActive && "text-[var(--text)]")}
+                  className={cn(isActive && "text-(--text)")}
                   size="sm"
                 >
                   {item.label}

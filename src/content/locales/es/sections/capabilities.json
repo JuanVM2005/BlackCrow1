@@ -1,25 +1,29 @@
 {
-    "kind": "capabilities",
-    "header": {
-      "headline": "Impulsamos Marcas que Destaquen",
-      "aside": "Creemos que las marcas no solo deben aparecer—deben entrar con presencia."
+  "kind": "capabilities",
+  "header": {
+    "headline": "Impulsamos Marcas que Destaquen",
+    "aside": "Creemos que las marcas no solo deben aparecer—deben entrar con presencia."
+  },
+  "items": [
+    {
+      "title": "Logo & Branding",
+      "description": "Más que un logo—es la cara, la voz y la personalidad de tu marca.",
+      "image": { "src": "/images/capabilities/branding.png", "alt": "Branding" }
     },
-    "items": [
-      {
-        "title": "Logo & Branding",
-        "description": "Más que un logo—es la cara, la voz y la personalidad de tu marca."
-      },
-      {
-        "title": "Web Design",
-        "description": "Sitios que no solo existen—enganchan, inspiran y elevan."
-      },
-      {
-        "title": "Development",
-        "description": "Código limpio y rápido, donde cada pixel y feature cuenta."
-      },
-      {
-        "title": "SEO & Performance",
-        "description": "Velocidad, indexación y mediciones para crecer con datos—no con supuestos."
-      }
-    ]
-  }
+    {
+      "title": "Web Design",
+      "description": "Sitios que no solo existen—enganchan, inspiran y elevan.",
+      "image": { "src": "/images/capabilities/web-design.png", "alt": "Web design" }
+    },
+    {
+      "title": "Development",
+      "description": "Código limpio y rápido, donde cada pixel y feature cuenta.",
+      "image": { "src": "/images/capabilities/development.png", "alt": "Development" }
+    },
+    {
+      "title": "SEO & Performance",
+      "description": "Velocidad, indexación y mediciones para crecer con datos—no con supuestos.",
+      "image": { "src": "/images/capabilities/seo.png", "alt": "SEO" }
+    }
+  ]
+}

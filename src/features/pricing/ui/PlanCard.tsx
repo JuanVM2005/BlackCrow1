@@ -80,9 +80,13 @@ export default function PlanCard({
         />
 
         <article
+          // ✅ IMPORTANTE: las cards usan surface BASE para el color de texto,
+          // pero el fondo sigue siendo bg-(--surface-raised) (no tocamos el fondo global).
+          data-surface="base"
           className={cn(
             "relative z-10 h-full rounded-[inherit] overflow-hidden",
             "bg-(--surface-raised)",
+            "text-(--text)",
             "border-solid border-[0.5px]",
             "transition-shadow duration-300 ease-out",
             "shadow-(--shadow-sm) group-hover:shadow-(--shadow-md) group-focus-within:shadow-(--shadow-md)",

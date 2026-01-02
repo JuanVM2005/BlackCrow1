@@ -7,13 +7,17 @@ import { site } from "@/config/site";
  * - /[locale]
  * - /[locale]/servicios|services
  * - /[locale]/servicios|services/[slug]
+ * - /[locale]/contacto | /[locale]/contact
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = (site?.url ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const baseUrl = (envBase || site.url).replace(/\/$/, "");
   const now = new Date();
 
   // Locales (con fallback si aún no existen los exports)
-  const { locales = ["es", "en"], defaultLocale = "es" } = await import("@/i18n/locales").catch(() => ({
+  const { locales = ["es", "en"], defaultLocale = "es" } = await import(
+    "@/i18n/locales"
+  ).catch(() => ({
     locales: ["es", "en"],
     defaultLocale: "es",
   }));
@@ -24,7 +28,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const servicesSegmentByLocale: Record<string, string> = {
     es: "servicios",
     en: "services",
-    ...(routing?.servicesSegmentByLocale ?? routing?.routeSegments?.services ?? {}),
+    ...(routing?.servicesSegmentByLocale ??
+      routing?.routeSegments?.services ??
+      {}),
   };
 
   const serviceSlugsByLocale: Record<string, string[]> = {
@@ -33,14 +39,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...(routing?.serviceSlugsByLocale ?? {}),
   };
 
+  const contactPathByLocale: Record<string, string> = {
+    es: "contacto",
+    en: "contact",
+  };
+
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of locales as string[]) {
     const home = `${baseUrl}/${locale}`;
-    const servicesSegment = servicesSegmentByLocale[locale] ?? (locale.startsWith("es") ? "servicios" : "services");
+
+    const servicesSegment =
+      servicesSegmentByLocale[locale] ??
+      (locale.startsWith("es") ? "servicios" : "services");
+
     const slugs =
       serviceSlugsByLocale[locale] ??
-      (locale.startsWith("es") ? ["landing", "website", "ecommerce", "personalizado"] : ["landing", "website", "ecommerce", "custom"]);
+      (locale.startsWith("es")
+        ? ["landing", "website", "ecommerce", "personalizado"]
+        : ["landing", "website", "ecommerce", "custom"]);
 
     // Home por locale
     entries.push({
@@ -67,9 +84,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       });
     }
+
+    // Contacto (página real)
+    entries.push({
+      url: `${home}/${contactPathByLocale[locale] ?? (locale.startsWith("es") ? "contacto" : "contact")}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
   }
 
   // Nota: si / redirige a /[defaultLocale], no la listamos para evitar duplicados.
-
   return entries;
 }

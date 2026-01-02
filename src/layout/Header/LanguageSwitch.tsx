@@ -141,8 +141,8 @@ export default function LanguageSwitch({ className }: { className?: string }) {
   return (
     <div
       className={[
-        "inline-flex items-center rounded-[var(--radius-pill)] border border-[color:var(--border)]",
-        "bg-[color:var(--surface)] text-[color:var(--text)] overflow-hidden",
+        "inline-flex items-center rounded-(--radius-pill) border border-(--border)",
+        "bg-(--surface) text-(--text) overflow-hidden",
         className ?? "",
       ].join(" ")}
       role="group"
@@ -154,7 +154,7 @@ export default function LanguageSwitch({ className }: { className?: string }) {
         className={[
           "px-3 py-1 text-sm",
           current === "es"
-            ? "bg-[color:var(--surface-raised)] font-semibold"
+            ? "bg-(--surface-raised) font-semibold"
             : "opacity-80",
         ].join(" ")}
       >
@@ -168,7 +168,7 @@ export default function LanguageSwitch({ className }: { className?: string }) {
       </span>
 
       {/* Separador fino */}
-      <span aria-hidden className="my-1 h-4 w-px bg-[color:var(--border)]" />
+      <span aria-hidden className="my-1 h-4 w-px bg-(--border)" />
 
       {/* Botón EN */}
       <span
@@ -176,7 +176,7 @@ export default function LanguageSwitch({ className }: { className?: string }) {
         className={[
           "px-3 py-1 text-sm",
           current === "en"
-            ? "bg-[color:var(--surface-raised)] font-semibold"
+            ? "bg-(--surface-raised) font-semibold"
             : "opacity-80",
         ].join(" ")}
       >

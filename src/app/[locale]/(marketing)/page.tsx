@@ -23,6 +23,10 @@ import HomeSectionJump from "@/features/landing/ui/HomeSectionJump.client";
 import { normalizeLocale } from "@/i18n/locales";
 import Footer from "@/layout/Footer";
 
+// ✅ Phone anchors + overlay (client)
+import { PhoneAnchorsProvider } from "@/features/value-grid/ui/usePhoneAnchors";
+import PhoneOverlay from "@/features/value-grid/ui/PhoneOverlay.client";
+
 type Locale = "es" | "en";
 type Params = { params: Promise<{ locale: Locale }> };
 
@@ -53,7 +57,7 @@ export default async function Page({ params }: Params) {
     "capabilities",
     "wordmarkOffset",
     "bigStatement",
-    "interactive-3d", // ✅ habilitado
+    "interactive-3d",
     "value-grid",
     "stack-grid",
     "message-bar",
@@ -75,8 +79,6 @@ export default async function Page({ params }: Params) {
 
   const renderBlock = (block: LandingBlock): ReactNode => {
     switch (block.kind) {
-
-      
       case "hero":
         return <Hero {...(block as any).props} />;
       case "studioIntro":
@@ -87,11 +89,8 @@ export default async function Page({ params }: Params) {
         return <WordmarkOffset {...(block as any).props} />;
       case "bigStatement":
         return <BigStatement {...(block as any).props} />;
-
-        
       case "interactive-3d":
         return <Interactive3D {...(block as any).props} />;
-
       case "value-grid":
         return <ValueGrid {...(block as any).props} />;
       case "stack-grid":
@@ -111,6 +110,7 @@ export default async function Page({ params }: Params) {
 
   type Group = { inverse: boolean; items: LandingBlock[] };
   const groups: Group[] = [];
+
   for (const b of filtered) {
     const inv = inverseKinds.has((b as any).kind);
     const last = groups[groups.length - 1];
@@ -122,7 +122,10 @@ export default async function Page({ params }: Params) {
   }
 
   return (
-    <>
+    <PhoneAnchorsProvider>
+      {/* ✅ Overlay global (sin props: el model vive dentro del componente) */}
+      <PhoneOverlay />
+
       {/* Posicionamiento automático en hero / pricing cuando venimos desde otra ruta */}
       <HomeSectionJump />
 
@@ -146,6 +149,6 @@ export default async function Page({ params }: Params) {
 
       {/* Footer claro solo para la landing */}
       <Footer locale={locale} surface="base" />
-    </>
+    </PhoneAnchorsProvider>
   );
 }
