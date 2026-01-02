@@ -7,6 +7,7 @@
  *
  * Importante:
  * - NO usar `new Function()` / `eval` (Vercel lo bloquea).
+ * - Este hook puede ser evaluado también en contextos Edge: ahí SALIMOS temprano.
  * - Si faltan dependencias, hacemos no-op sin romper.
  */
 
@@ -17,7 +18,10 @@ type HeaderMap = Record<string, string>;
 function parseOtelHeaders(raw?: string): HeaderMap {
   if (!raw) return {};
   const out: HeaderMap = {};
-  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = raw
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   for (const part of parts) {
     const eq = part.indexOf("=");
@@ -38,20 +42,30 @@ function normalizeTracesEndpoint(endpoint: string): string {
 }
 
 export async function register() {
+  // ✅ Si Next intenta evaluar el hook en Edge, salimos.
+  // (Evita "Code generation from strings disallowed..." y otras restricciones Edge)
+  if (process.env.NEXT_RUNTIME === "edge") return;
+
+  // Flag de activación
   if (process.env.ENABLE_OTEL !== "1") return;
 
+  // Evita doble init
   const g = globalThis as any;
   if (g.__otel_sdk_started) return;
 
   try {
     // ✅ Sin eval/new Function: imports normales (si no existen, cae al catch)
-    const [{ NodeSDK }, { getNodeAutoInstrumentations }, { OTLPTraceExporter }, api] =
-      await Promise.all([
-        import("@opentelemetry/sdk-node"),
-        import("@opentelemetry/auto-instrumentations-node"),
-        import("@opentelemetry/exporter-trace-otlp-http"),
-        import("@opentelemetry/api"),
-      ]);
+    const [
+      { NodeSDK },
+      { getNodeAutoInstrumentations },
+      { OTLPTraceExporter },
+      api,
+    ] = await Promise.all([
+      import("@opentelemetry/sdk-node"),
+      import("@opentelemetry/auto-instrumentations-node"),
+      import("@opentelemetry/exporter-trace-otlp-http"),
+      import("@opentelemetry/api"),
+    ]);
 
     const serviceName = process.env.OTEL_SERVICE_NAME || "black-crow-web";
     const rawEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim();
@@ -77,16 +91,20 @@ export async function register() {
           "@opentelemetry/instrumentation-fs": { enabled: false },
         }),
       ],
+      // Si luego quieres setear Resource con service.name, se puede,
+      // por ahora basta OTEL_SERVICE_NAME por env.
     });
 
     await sdk.start();
     g.__otel_sdk_started = true;
 
+    // Silenciar diag interno (opcional)
     api.diag.setLogger(
       { debug() {}, error() {}, info() {}, warn() {}, verbose() {} },
       api.DiagLogLevel.NONE,
     );
 
+    // Cierre ordenado
     if (typeof process !== "undefined" && typeof process.on === "function") {
       process.on("beforeExit", async () => {
         try {
@@ -97,7 +115,7 @@ export async function register() {
       });
     }
 
-    // (opcional) usa serviceName si luego configuras Resource, etc.
+    // (opcional) referencia para evitar "unused" si habilitas noUnusedLocals
     void serviceName;
   } catch (err) {
     // Si faltan dependencias OTEL o falla algo, no rompemos el deploy

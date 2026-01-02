@@ -2,14 +2,15 @@
 import { ImageResponse } from "next/og";
 
 // Next necesita leer estos exports directamente aquí
-export const runtime = "edge";
+// ✅ Cambiado a Node.js para evitar el límite 1MB de Edge Functions
+export const runtime = "nodejs";
 export const contentType = "image/png";
 export const size = { width: 1200, height: 630 };
 
 type Locale = "es" | "en";
 
 /**
- * ✅ Mantener bundle Edge < 1MB:
+ * ✅ Mantener bundle chico:
  * - Sin imports internos (i18n/locales, home.json, ogTheme).
  * - Copy mínimo inline.
  * - Theme inline.
