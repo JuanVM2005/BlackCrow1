@@ -112,12 +112,38 @@ function usePrefersReducedMotionLocal(): boolean {
   return reduced;
 }
 
+/**
+ * ✅ Pausa extra si la pestaña no está visible (reduce context lost).
+ */
+function usePageVisible(): boolean {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const onVis = () => setVisible(document.visibilityState === "visible");
+    onVis();
+
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  return visible;
+}
+
 export default function Interactive3D({
   eyebrow,
   headline,
   ariaLabel = eyebrow,
 }: Interactive3DUiProps): ReactElement {
-  const { ref, inView } = useSectionInView();
+  /**
+   * ✅ inView “real” para activar render loop y anims
+   */
+  const { ref, inView } = useSectionInView({
+    rootMargin: "0px 0px -20% 0px",
+    threshold: 0.12,
+    once: false,
+  });
 
   // ✅ Anchor start para PhoneOverlay (fin de Interactive3D)
   const { startRef } = usePhoneAnchors();
@@ -125,6 +151,7 @@ export default function Interactive3D({
   const isMobile = useIsMobile();
   const isLowResMobile = useIsLowResMobile(isMobile);
   const reducedMotion = usePrefersReducedMotionLocal();
+  const pageVisible = usePageVisible();
 
   // ✅ Desktop/Windows: EXACTO como lo tenías
   const desktop = {
@@ -170,7 +197,67 @@ export default function Interactive3D({
 
   const s = isMobile ? (isLowResMobile ? lowResMobile : mobile) : desktop;
 
-  // Entrada UI (barra + headline) — sin zoom, con blur suave y delay real
+  /**
+   * ✅ qualityToken seguro para landing
+   * - Desktop/Tablet: medium (sweet spot)
+   * - Mobile: low
+   */
+  const qualityToken = useMemo<"low" | "medium" | "high">(() => {
+    if (isMobile) return "low";
+    return "medium";
+  }, [isMobile]);
+
+  /**
+   * ✅ Active real del shader:
+   * - Solo si está en viewport
+   * - Solo si la pestaña está visible
+   */
+  const shaderActive = inView && pageVisible;
+
+  /**
+   * ✅ “Predicción”: montamos el Canvas ANTES de entrar (pero sin animar)
+   * - nearInView se activa con rootMargin grande
+   * - Así el primer frame no “pega”
+   */
+  const [nearInView, setNearInView] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const el = (ref as any)?.current as HTMLElement | null;
+    // Si tu hook entrega callback-ref, este bloque no se usa.
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => setNearInView(!!entry?.isIntersecting),
+      {
+        root: null,
+        rootMargin: "900px 0px 900px 0px",
+        threshold: 0.01,
+      },
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+
+  /**
+   * ✅ Gate de montaje del Canvas (CRÍTICO para que no compita con Hero/Phone)
+   * - Monta cuando está “cerca” o “activo”
+   * - Desmonta con delay corto para evitar overlap al scrollear
+   */
+  const [mountShader, setMountShader] = useState(false);
+
+  useEffect(() => {
+    if (nearInView || shaderActive) {
+      setMountShader(true);
+      return;
+    }
+    const t = window.setTimeout(() => setMountShader(false), 220);
+    return () => window.clearTimeout(t);
+  }, [nearInView, shaderActive]);
+
+  // Entrada UI (barra + headline)
   const anim = useMemo(() => {
     if (reducedMotion) {
       return {
@@ -267,13 +354,15 @@ export default function Interactive3D({
             height: s.bubbleH,
           }}
         >
-          <ShaderCanvas
-            ariaLabel={ariaLabel}
-            qualityToken="high"
-            className="absolute inset-0 h-full w-full"
-            // ✅ activa reveal y loop solo cuando entra al viewport
-            active={inView}
-          />
+          {/* ✅ Canvas solo si corresponde (evita saturar GPU junto al Hero/Phone) */}
+          {mountShader ? (
+            <ShaderCanvas
+              ariaLabel={ariaLabel}
+              qualityToken={qualityToken}
+              className="absolute inset-0 h-full w-full"
+              active={shaderActive}
+            />
+          ) : null}
         </div>
 
         {/* Frente */}
@@ -306,7 +395,6 @@ export default function Interactive3D({
                 justifyContent: "flex-start",
                 gap: s.barGap,
 
-                // anim
                 ...barStyle,
               }}
             >
@@ -321,7 +409,6 @@ export default function Interactive3D({
                 marginInline: "auto",
                 borderRadius: "var(--radius-lg)",
 
-                // anim
                 ...headlineWrapStyle,
               }}
             >

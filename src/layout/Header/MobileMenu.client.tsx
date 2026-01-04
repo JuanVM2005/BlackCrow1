@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -112,7 +113,7 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
   const basePath = `/${locale}`;
   const nav: NavItem[] = React.useMemo(() => buildNav(locale), [locale]);
 
-  // ✅ CTA EXACTAMENTE IGUAL que TopBar
+  // CTA igual intención que TopBar
   const ctaHref =
     locale === "es"
       ? `/${locale}/servicios/personalizado`
@@ -121,7 +122,10 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
   const ctaText =
     ctaLabel ?? (locale === "en" ? "Start your project" : "Empieza tu proyecto");
 
-  // ✅ Misma lógica del BottomDock (idéntica intención/UX)
+  // Marca (mark) — usamos la versión base dentro del sheet (surface base)
+  const brandMarkSrc = "/logos/brand-mark.svg";
+
+  // Misma lógica del BottomDock
   const handleNavClick = React.useCallback(
     (
       event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
@@ -180,7 +184,7 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
     [basePath, locale, pathname],
   );
 
-  // ✅ Transición para CTA (igual idea que “contact” del dock: overlay + navegación normal)
+  // Transición para CTA (overlay + navegación normal)
   const handleCtaClick = React.useCallback(
     (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
       if (isModifiedClick(event)) return;
@@ -271,9 +275,33 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
                     {/* Header interno */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <Text as="p" size="sm" className="text-(--text-muted)">
-                          {a11y.title}
-                        </Text>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={basePath}
+                            onClick={(e) => {
+                              if (!isModifiedClick(e)) close();
+                            }}
+                            aria-label="Black Crow"
+                            className={cn(
+                              "inline-flex items-center",
+                              "transition-opacity duration-200",
+                              "hover:opacity-80",
+                            )}
+                          >
+                            <Image
+                              src={brandMarkSrc}
+                              alt="Black Crow"
+                              width={28}
+                              height={28}
+                              priority
+                              className="h-7 w-7"
+                            />
+                          </Link>
+
+                          <Text as="p" size="sm" className="text-(--text-muted)">
+                            {a11y.title}
+                          </Text>
+                        </div>
                       </div>
 
                       <button
@@ -328,13 +356,16 @@ export default function MobileMenu({ locale: rawLocale, ctaLabel }: Props) {
                       </ul>
                     </nav>
 
-                    {/* CTA: ahora EXACTAMENTE igual que TopBar */}
+                    {/* CTA: tokens (alineado a TopBar actualizado) */}
                     <div className="mt-6">
                       <Button
                         asChild
                         variant="solid"
                         size="lg"
-                        className="w-full rounded-full"
+                        className={cn(
+                          "w-full rounded-full",
+                          "bg-(--btn-bg) text-(--btn-fg)",
+                        )}
                       >
                         <Link
                           href={ctaHref}

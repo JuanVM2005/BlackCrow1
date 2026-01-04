@@ -1,9 +1,12 @@
+// src/layout/Header/index.tsx
 "use client";
 
 import * as React from "react";
+
 import TopBar from "./TopBar";
 import BottomDock from "./BottomDock";
 import MobileMenu from "./MobileMenu.client";
+import { useHeaderTone } from "./useHeaderTone";
 
 type HeaderProps = {
   locale?: string;
@@ -11,23 +14,18 @@ type HeaderProps = {
   ctaLabel?: string;
 };
 
-/**
- * Header compuesto
- * - Desktop / Tablet: TopBar + BottomDock (como hasta ahora)
- * - Mobile: TopBar + MobileMenu (navbar oculta)
- */
 export default function Header({ locale, ctaLabel }: HeaderProps) {
+  const tone = useHeaderTone();
+
   return (
     <>
-      {/* ===== HEADER SUPERIOR ===== */}
-      <TopBar locale={locale} ctaLabel={ctaLabel} />
+      <TopBar locale={locale} ctaLabel={ctaLabel} tone={tone} />
 
-      {/* ===== DESKTOP / TABLET ===== */}
       <div className="hidden md:block">
-        <BottomDock />
+        {/* ✅ CLAVE: pasar tone al dock */}
+        <BottomDock tone={tone} />
       </div>
 
-      {/* ===== MOBILE ===== */}
       <div className="block md:hidden">
         <MobileMenu locale={locale} ctaLabel={ctaLabel} />
       </div>

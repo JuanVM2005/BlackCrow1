@@ -3,7 +3,10 @@
   "word": "BLACK CROW",
   "media": {
     "kind": "image",
-    "src": "/images/landing/hero-desktop.webp",
-    "alt": "Textura hero estática usada en el logotipo BLACK CROW"
+    "src": {
+      "left": "/images/landing/miradacrow-left.png",
+      "right": "/images/landing/miradacrow-right.png"
+    },
+    "alt": "Texturas laterales usadas en el logotipo BLACK CROW"
   }
 }

@@ -199,7 +199,7 @@ export default function HoverPreview({
         ref={boxRef}
         className={[
           "relative w-full h-full overflow-hidden",
-          "rounded-xl border border-border bg-background shadow-lg",
+          "rounded-xl bg-background shadow-lg",
         ].join(" ")}
         style={{
           transformOrigin: "50% 0%",

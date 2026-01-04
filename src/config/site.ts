@@ -55,16 +55,8 @@ export const site = {
      * public/favicons/maskable-512.png
      */
     icons: [
-      {
-        src: "/favicons/icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        src: "/favicons/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
+      { src: "/favicons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/favicons/icon-512.png", sizes: "512x512", type: "image/png" },
       {
         src: "/favicons/maskable-192.png",
         sizes: "192x192",
@@ -90,11 +82,12 @@ export const site = {
 
   /**
    * Fallback nav — solo ES.
-   * No se usa para i18n real (usar buildNav(locale)).
+   * (No se usa para i18n real; usar buildNav(locale).)
+   * ✅ Sin “Servicios” (solo Home / Precios / Contacto).
    */
   nav: [
     { id: "home", label: "Home", href: "/es" },
-    { id: "services", label: "Servicios", href: "/es/servicios" },
+    { id: "pricing", label: "Precios", href: "/es" },
     { id: "contact", label: "Contacto", href: "/es/contacto" },
   ] as NavItem[],
 } as const;
@@ -108,7 +101,6 @@ export type SiteConfig = typeof site;
 const labelsByLocale = {
   es: {
     home: "Home",
-    services: "Servicios",
     pricing: "Precios",
     contact: "Contacto",
     privacy: "Privacidad",
@@ -117,7 +109,6 @@ const labelsByLocale = {
   },
   en: {
     home: "Home",
-    services: "Services",
     pricing: "Pricing",
     contact: "Contact",
     privacy: "Privacy",
@@ -127,35 +118,27 @@ const labelsByLocale = {
 } as const;
 
 /**
- * Anchors para navegación por secciones en home.
- * (No rompen aunque la sección no exista; solo no hace scroll.)
+ * MENU PRINCIPAL i18n
+ * ✅ Sin “Servicios”.
+ *
+ * Nota sobre “#pricing / #precios”:
+ * - Aquí NO usamos hashes, porque tú ya controlas el scroll + splash con `id: "pricing"`.
+ * - El `href` para pricing apunta al HOME base (`/es` | `/en`).
+ * - BottomDock/MobileMenu detectan `id === "pricing"` y hacen:
+ *    - overlay + scroll a la sección (si estás en home)
+ *    - o guardan intención en sessionStorage (si vienes desde otra ruta)
  */
-const anchorsByLocale = {
-  es: { pricing: "#precios", contact: "#contacto" },
-  en: { pricing: "#pricing", contact: "#contact" },
-} as const;
-
-/* =========================================================
-   MENU PRINCIPAL i18n
-   - Home: ruta base
-   - Servicios: página /services o /servicios (existe en tu estructura)
-   - Precios: sección en home (hash)
-   - Contacto: página /contact o /contacto (existe en tu estructura)
-   ========================================================= */
-
 export function buildNav(localeInput?: string): NavItem[] {
   const l = normalizeLocale(localeInput);
   const base = localeBasePath(l); // "/es" | "/en"
   const labels = labelsByLocale[l];
 
-  const servicesHref = l === "es" ? `${base}/servicios` : `${base}/services`;
   const contactHref = l === "es" ? `${base}/contacto` : `${base}/contact`;
-  const pricingHref = `${base}${anchorsByLocale[l].pricing}`;
 
   return [
     { id: "home", label: labels.home, href: base },
-    { id: "services", label: labels.services, href: servicesHref },
-    { id: "pricing", label: labels.pricing, href: pricingHref },
+    // ✅ Pricing SIEMPRE navega al home (sin hash). La lógica de scroll la maneja tu splash + JS.
+    { id: "pricing", label: labels.pricing, href: base },
     { id: "contact", label: labels.contact, href: contactHref },
   ];
 }
@@ -174,11 +157,6 @@ export function buildFooterLinks(localeInput?: string): FooterLink[] {
   const contactHref = l === "es" ? `${base}/contacto` : `${base}/contact`;
 
   return [
-    /**
-     * ✅ Sin rutas legales aún: apúntalo al home para no 404.
-     * Cuando crees páginas legales, cambia a:
-     * - `${base}/legal/privacidad` / `${base}/legal/terms` etc.
-     */
     { label: labels.privacy, href: base },
     { label: labels.terms, href: base },
     { label: labels.support, href: contactHref },

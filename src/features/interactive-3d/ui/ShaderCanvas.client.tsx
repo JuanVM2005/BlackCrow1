@@ -424,18 +424,33 @@ function ShaderCanvasBase({
     setSupported(hasWebGLSupport());
   }, []);
 
-  // DPR desde tokens (fallbacks seguros)
-  const dpr =
-    qualityToken === "low"
-      ? readCssVarNumber("--fx-dpr-low", 0.75)
-      : qualityToken === "medium"
-        ? readCssVarNumber("--fx-dpr-medium", 1)
-        : readCssVarNumber(
-            "--fx-dpr-high",
-            typeof window !== "undefined"
-              ? Math.min(window.devicePixelRatio || 1, 1.75)
-              : 1,
-          );
+  /**
+   * ✅ DPR “más bajo” (solo resolución, sin tocar animación):
+   * - Tokens: --fx-dpr-low/medium/high (con fallbacks más conservadores)
+   * - Cap de high reducido (antes 1.75 → ahora 1.25)
+   * - Extra en coarse pointer (mobile/touch): reduce un poco más
+   */
+  const dpr = useMemo(() => {
+    const low = readCssVarNumber("--fx-dpr-low", 0.6);
+    const medium = readCssVarNumber("--fx-dpr-medium", 0.85);
+
+    // fallback “high” conservador y con cap menor
+    const hiDefault =
+      typeof window !== "undefined"
+        ? Math.min(window.devicePixelRatio || 1, 1.25)
+        : 1;
+
+    const high = readCssVarNumber("--fx-dpr-high", hiDefault);
+
+    const base =
+      qualityToken === "low" ? low : qualityToken === "medium" ? medium : high;
+
+    // Solo para mobile/touch: baja un poco más la resolución (sin afectar interacción/animación)
+    const mobileFactor = mobileBoost ? 0.85 : 1;
+
+    // Clamp seguro (evita valores extremos por tokens)
+    return THREE.MathUtils.clamp(base * mobileFactor, 0.5, 1.25);
+  }, [qualityToken, mobileBoost]);
 
   const isPaused = !active || paused === true;
 

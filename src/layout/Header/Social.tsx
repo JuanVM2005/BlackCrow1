@@ -34,8 +34,9 @@ type Props = {
   /** Solo icono (sin contenedor) */
   bare?: boolean;
   /**
-   * Auto inversión: icono en blanco base con mix-blend-difference.
-   * - Sobre fondo blanco se ve negro, sobre fondo negro se ve blanco.
+   * Auto inversión: usa currentColor + mix-blend-difference.
+   * Útil cuando el fondo cambia (base/inverse) y quieres que el icono “se adapte”
+   * sin pasar props de tono.
    */
   autoInvert?: boolean;
 };
@@ -74,27 +75,27 @@ export default function Social({
       { kind: "whatsapp", href: "#" },
     ];
 
-  const iconPx = bare ? (size === "sm" ? 18 : 20) : size === "sm" ? 16 : 18;
+  const iconPx = bare ? (size === "sm" ? 20 : 22) : size === "sm" ? 18 : 20;
+
+  const ringClass =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ring) focus-visible:ring-offset-2";
 
   return (
     <ul
       className={cn(
         "flex items-center gap-3 md:gap-4",
+        // ✅ Por defecto HEREDA currentColor del padre (TopBar/BottomDock wrapper).
+        // ✅ AutoInvert opcional (si lo activas desde donde lo uses).
         autoInvert
-          ? "mix-blend-difference text-[var(--text-inverse)]"
-          : "text-[var(--text)]",
-        className
+          ? "text-(--text-inverse) mix-blend-difference"
+          : "text-current",
+        className,
       )}
     >
       {socials.map((s) => {
         const k = (s.kind?.toString().toLowerCase() || "x") as IconKind;
         const Icon = ICONS[k] as IconType | undefined;
         const label = s.label ?? LABELS[k] ?? "Social";
-        const content = Icon ? (
-          <Icon size={iconPx} aria-hidden="true" focusable="false" />
-        ) : (
-          <span aria-hidden="true">•</span>
-        );
 
         return (
           <li key={`${s.kind}-${s.href}`}>
@@ -105,18 +106,33 @@ export default function Social({
               aria-label={label}
               title={label}
               className={cn(
+                "inline-flex",
                 bare
-                  ? "inline-flex hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] rounded"
-                  : [
-                      "inline-flex items-center justify-center",
-                      size === "sm" ? "h-7 w-7" : "h-8 w-8",
-                      "rounded-full border border-[var(--border)]",
+                  ? cn(
+                      "rounded-sm",
+                      "transition-[opacity,transform] duration-200",
+                      "hover:opacity-90 active:scale-[0.98]",
+                      ringClass,
+                    )
+                  : cn(
+                      "items-center justify-center",
+                      size === "sm" ? "h-9 w-9" : "h-10 w-10",
+                      "rounded-(--radius-full)",
+                      "border border-(--border)",
+                      // chip neutro (no fuerza “negro”), sigue tokens
                       "bg-[color-mix(in_oklab,var(--surface) 92%,transparent)]",
-                      "shadow-sm hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
-                    ]
+                      "shadow-(--shadow-xs)",
+                      "transition-[opacity,transform,background-color,border-color] duration-200",
+                      "hover:opacity-90 active:scale-[0.98]",
+                      ringClass,
+                    ),
               )}
             >
-              {content}
+              {Icon ? (
+                <Icon size={iconPx} aria-hidden="true" focusable="false" />
+              ) : (
+                <span aria-hidden="true">•</span>
+              )}
             </a>
           </li>
         );

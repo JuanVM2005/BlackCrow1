@@ -158,7 +158,7 @@ export default function RootProviders({ children }: Props) {
           luego se limpia el blur y se habilita el scroll */}
       <div
         className={`min-h-dvh transition-[filter,opacity] duration-700 ${
-          isRevealed ? "blur-0 opacity-100" : "blur-[12px] opacity-70"
+          isRevealed ? "blur-0 opacity-100" : "blur-md opacity-70"
         }`}
       >
         {children}

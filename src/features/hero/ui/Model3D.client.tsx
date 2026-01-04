@@ -4,7 +4,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Preload, useGLTF } from "@react-three/drei";
+import { Environment, useGLTF } from "@react-three/drei";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
 
 /* ===== Props ===== */
@@ -17,6 +17,8 @@ type Props = {
   eventSource?: React.RefObject<HTMLElement>;
   /** Si es false, apagamos FX pesados (nebulosa, humo) cuando el hero ya no está visible */
   effectsActive?: boolean;
+  /** ✅ Si es false, pausamos el render loop del Canvas (0 consumo de frames) */
+  renderActive?: boolean;
 };
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
@@ -30,26 +32,17 @@ const VIEW = {
   desktop: {
     modelPos: [1.2, -8.3, 0] as [number, number, number],
     modelScale: 1.52,
-    camera: {
-      pos: [-5.2, -5.0, 6.9] as [number, number, number],
-      fov: 20,
-    },
+    camera: { pos: [-5.2, -5.0, 6.9] as [number, number, number], fov: 20 },
   },
   tablet: {
     modelPos: [0.65, -1.35, 0] as [number, number, number],
     modelScale: 1.4,
-    camera: {
-      pos: [-6.2, 1.8, 6.1] as [number, number, number],
-      fov: 21,
-    },
+    camera: { pos: [-6.2, 1.8, 6.1] as [number, number, number], fov: 21 },
   },
   mobile: {
     modelPos: [0, -1.0, 0] as [number, number, number],
     modelScale: 1.05,
-    camera: {
-      pos: [-5.0, 1.9, 6.8] as [number, number, number],
-      fov: 22,
-    },
+    camera: { pos: [-5.0, 1.9, 6.8] as [number, number, number], fov: 22 },
   },
 } as const;
 
@@ -58,19 +51,14 @@ let cachedWebGLSupport: boolean | null = null;
 
 function canUseWebGL(): boolean {
   if (cachedWebGLSupport !== null) return cachedWebGLSupport;
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    return true;
-  }
+  if (typeof window === "undefined" || typeof document === "undefined") return true;
 
   try {
     const canvas = document.createElement("canvas");
     const gl =
       canvas.getContext("webgl") ||
       canvas.getContext("experimental-webgl") ||
-      (canvas.getContext("webgl2") as
-        | WebGLRenderingContext
-        | WebGL2RenderingContext
-        | null);
+      (canvas.getContext("webgl2") as WebGLRenderingContext | WebGL2RenderingContext | null);
     cachedWebGLSupport = !!gl;
   } catch {
     cachedWebGLSupport = false;
@@ -121,25 +109,25 @@ function pickGLSLPrecision(
 }
 
 /** Construye un grupo “ligero” para una capa, reutilizando geometría del modelo base */
-function buildLayerGroup(
-  baseScene: THREE.Object3D,
-  material: THREE.ShaderMaterial,
-): THREE.Group {
+function buildLayerGroup(baseScene: THREE.Object3D, material: THREE.ShaderMaterial): THREE.Group {
   const group = new THREE.Group();
 
-  baseScene.traverse((obj: THREE.Object3D) => {
+  baseScene.traverse((obj) => {
     if (!isMesh(obj)) return;
 
     const sourceMesh = obj as THREE.Mesh;
-
     const mesh = new THREE.Mesh(sourceMesh.geometry, material);
+
     mesh.position.copy(sourceMesh.position);
     mesh.quaternion.copy(sourceMesh.quaternion);
     mesh.scale.copy(sourceMesh.scale);
 
+    // ✅ capas FX sin sombras
     mesh.castShadow = false;
     mesh.receiveShadow = false;
-    mesh.frustumCulled = false;
+
+    // ✅ culling ON (clave)
+    mesh.frustumCulled = true;
 
     group.add(mesh);
   });
@@ -163,23 +151,27 @@ function RigMouseYaw({
   lerp?: number;
 }) {
   useFrame(({ mouse }) => {
-    // desktop/tablet OK, mobile lo manejamos con drag touch
     if (viewport === "mobile") return;
     const mx = THREE.MathUtils.clamp(mouse.x || 0, -1, 1);
-    const target = mx * maxYaw;
-    rig.current.rotY = THREE.MathUtils.lerp(rig.current.rotY, target, lerp);
+    rig.current.rotY = THREE.MathUtils.lerp(rig.current.rotY, mx * maxYaw, lerp);
   });
   return null;
 }
 
-/* ===== Rig: rotación por drag (MÁS sensible SOLO en mobile) ===== */
+/**
+ * ===== ✅ Rig mobile "NO-BLOCKING"
+ * - No usa pointer capture
+ * - No usa preventDefault
+ * - touchAction: pan-y (permite scroll vertical)
+ * - Igual rota con gesto horizontal, pero deja bajar/seguir scrolleando.
+ */
 function RigMobileDragYaw({
   rig,
   enabled,
   eventEl,
-  maxYaw = 0.62, // ✅ más margen
-  sensitivity = 2.9, // ✅ más sensible
-  lerp = 0.18, // ✅ sigue suave pero responde más
+  maxYaw = 0.62,
+  sensitivity = 2.4,
+  lerp = 0.18,
 }: {
   rig: RigRef;
   enabled: boolean;
@@ -188,16 +180,13 @@ function RigMobileDragYaw({
   sensitivity?: number;
   lerp?: number;
 }) {
-  const { gl, size } = useThree();
+  const { gl, size, invalidate } = useThree();
 
-  const dragging = useRef(false);
-  const pointerId = useRef<number | null>(null);
-  const startX = useRef(0);
-  const startRot = useRef(0);
+  const isDown = useRef(false);
+  const lastX = useRef(0);
   const target = useRef(0);
   const prevTouchAction = useRef<string | null>(null);
 
-  // suavizado hacia target
   useFrame(() => {
     if (!enabled) return;
     rig.current.rotY = THREE.MathUtils.lerp(rig.current.rotY, target.current, lerp);
@@ -209,75 +198,126 @@ function RigMobileDragYaw({
     const el = eventEl ?? (gl.domElement as unknown as HTMLElement);
     if (!el) return;
 
-    // evita scroll/zoom mientras arrastras sobre el canvas
+    // ✅ permite scroll vertical mientras el dedo se mueve
     prevTouchAction.current = el.style.touchAction || "";
-    el.style.touchAction = "none";
+    el.style.touchAction = "pan-y";
 
-    const onDown = (e: PointerEvent) => {
-      // solo primer dedo
-      if (dragging.current) return;
-
-      dragging.current = true;
-      pointerId.current = e.pointerId;
-
-      startX.current = e.clientX;
-      startRot.current = target.current; // mantiene donde quedó
-
-      try {
-        el.setPointerCapture?.(e.pointerId);
-      } catch {
-        /* noop */
-      }
+    const onPointerDown = (e: PointerEvent) => {
+      isDown.current = true;
+      lastX.current = e.clientX;
+      // despertamos un frame (por si frameloop estaba en "never" y lo activaron)
+      invalidate();
     };
 
-    const onMove = (e: PointerEvent) => {
-      if (!dragging.current) return;
-      if (pointerId.current !== null && e.pointerId !== pointerId.current) return;
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDown.current) return;
 
-      // delta normalizado por el ancho del canvas
-      const dx = (e.clientX - startX.current) / Math.max(1, size.width);
+      // delta X incremental: no “captura”, así el scroll sigue funcionando.
+      const dx = (e.clientX - lastX.current) / Math.max(1, size.width);
+      lastX.current = e.clientX;
 
-      // ✅ más respuesta: multiplicamos por sensibilidad y maxYaw
-      const next = startRot.current + dx * sensitivity * maxYaw;
-
+      // sumamos un pequeño delta al target, con clamp
+      const next = target.current + dx * sensitivity * maxYaw;
       target.current = clamp(next, -maxYaw, maxYaw);
+
+      // si renderActive está en true, igual invalida ayuda a respuesta rápida
+      invalidate();
     };
 
-    const endDrag = (e: PointerEvent) => {
-      if (pointerId.current !== null && e.pointerId !== pointerId.current) return;
-      dragging.current = false;
-      pointerId.current = null;
-
-      try {
-        el.releasePointerCapture?.(e.pointerId);
-      } catch {
-        /* noop */
-      }
+    const end = () => {
+      isDown.current = false;
     };
 
-    el.addEventListener("pointerdown", onDown, { passive: true });
-    el.addEventListener("pointermove", onMove, { passive: true });
-    el.addEventListener("pointerup", endDrag, { passive: true });
-    el.addEventListener("pointercancel", endDrag, { passive: true });
-    el.addEventListener("pointerleave", endDrag, { passive: true });
+    // ✅ passive true => nunca bloquea scroll
+    el.addEventListener("pointerdown", onPointerDown, { passive: true });
+    el.addEventListener("pointermove", onPointerMove, { passive: true });
+    el.addEventListener("pointerup", end, { passive: true });
+    el.addEventListener("pointercancel", end, { passive: true });
+    el.addEventListener("pointerleave", end, { passive: true });
 
     return () => {
-      el.removeEventListener("pointerdown", onDown);
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerup", endDrag);
-      el.removeEventListener("pointercancel", endDrag);
-      el.removeEventListener("pointerleave", endDrag);
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("pointermove", onPointerMove);
+      el.removeEventListener("pointerup", end);
+      el.removeEventListener("pointercancel", end);
+      el.removeEventListener("pointerleave", end);
 
-      if (prevTouchAction.current !== null) {
-        el.style.touchAction = prevTouchAction.current;
-      }
+      if (prevTouchAction.current !== null) el.style.touchAction = prevTouchAction.current;
     };
-  }, [enabled, eventEl, gl, size.width, maxYaw, sensitivity]);
+  }, [enabled, eventEl, gl, size.width, maxYaw, sensitivity, invalidate]);
 
   return null;
 }
 
-/* ===== Modelo principal (usa escena base compartida) ===== */
+/* ===== WebGL guard: context lost/restored + degrade ===== */
+function WebGLContextGuard({
+  onLost,
+  onRestored,
+}: {
+  onLost: () => void;
+  onRestored: () => void;
+}) {
+  const { gl } = useThree();
+
+  useEffect(() => {
+    const canvas = gl.domElement as HTMLCanvasElement;
+
+    const handleLost = (e: Event) => {
+      e.preventDefault?.();
+      onLost();
+    };
+    const handleRestored = () => onRestored();
+
+    canvas.addEventListener("webglcontextlost", handleLost as EventListener, { passive: false });
+    canvas.addEventListener("webglcontextrestored", handleRestored, { passive: true });
+
+    return () => {
+      canvas.removeEventListener("webglcontextlost", handleLost as EventListener);
+      canvas.removeEventListener("webglcontextrestored", handleRestored);
+    };
+  }, [gl, onLost, onRestored]);
+
+  return null;
+}
+
+/* ===== Budget simple: si va lento, activa lowPower ===== */
+function PerformanceBudget({
+  enabled,
+  onLowPower,
+}: {
+  enabled: boolean;
+  onLowPower: () => void;
+}) {
+  const slowFrames = useRef(0);
+  const totalFrames = useRef(0);
+
+  useFrame((_, dt) => {
+    if (!enabled) return;
+
+    totalFrames.current += 1;
+    if (dt > 1 / 40) slowFrames.current += 1;
+
+    if (totalFrames.current >= 120) {
+      const ratio = slowFrames.current / totalFrames.current;
+      if (ratio > 0.35) onLowPower();
+      slowFrames.current = 0;
+      totalFrames.current = 0;
+    }
+  });
+
+  return null;
+}
+
+/* ===== ✅ Despertar Canvas al reactivar (cuando frameloop="never") ===== */
+function WakeOnActive({ active }: { active: boolean }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    if (active) invalidate();
+  }, [active, invalidate]);
+  return null;
+}
+
+/* ===== Modelo principal ===== */
 function CrowModel({
   baseScene,
   rig,
@@ -301,12 +341,13 @@ function CrowModel({
     camera.fov = cfg.camera.fov;
     camera.updateProjectionMatrix();
 
-    baseScene.traverse((obj: THREE.Object3D) => {
+    // ✅ sombras OFF (mantén estética con iluminación + env)
+    baseScene.traverse((obj) => {
       if (!isMesh(obj)) return;
 
-      obj.castShadow = true;
-      obj.receiveShadow = true;
-      obj.frustumCulled = false;
+      obj.castShadow = false;
+      obj.receiveShadow = false;
+      obj.frustumCulled = true;
 
       const mat = obj.material as THREE.Material | THREE.Material[];
       const tweak = (m: THREE.Material) => {
@@ -314,17 +355,14 @@ function CrowModel({
         const anyMat = m as any;
         if (anyMat && anyMat.color) {
           anyMat.color.lerp(new THREE.Color("#f5f5f7"), 0.2);
-          if (typeof anyMat.roughness === "number") {
+          if (typeof anyMat.roughness === "number")
             anyMat.roughness = Math.min(1, anyMat.roughness + 0.05);
-          }
-          if (typeof anyMat.metalness === "number") {
-            anyMat.metalness = anyMat.metalness * 0.9;
-          }
+          if (typeof anyMat.metalness === "number") anyMat.metalness = anyMat.metalness * 0.9;
           anyMat.needsUpdate = true;
         }
       };
 
-      if (Array.isArray(mat)) mat.forEach((m) => tweak(m));
+      if (Array.isArray(mat)) mat.forEach(tweak);
       else if (mat) tweak(mat);
     });
   }, [baseScene, camera, viewport]);
@@ -341,17 +379,19 @@ function CrowModel({
   );
 }
 
-/* ===== SurfaceAura (capa extra: halo) ===== */
+/* ===== SurfaceAura (halo) ===== */
 function SurfaceAura({
   baseScene,
   rig,
   viewport,
+  enabled,
   scaleMul = 1.018,
   alpha = 0.45,
 }: {
   baseScene: THREE.Object3D;
   rig: RigRef;
   viewport: ViewportMode;
+  enabled: boolean;
   scaleMul?: number;
   alpha?: number;
 }) {
@@ -360,7 +400,8 @@ function SurfaceAura({
   const { camera, gl } = useThree();
 
   const material = useMemo(() => {
-    const prec = pickGLSLPrecision(gl);
+    const isMobile = viewport === "mobile";
+    const prec = pickGLSLPrecision(gl, isMobile);
     const header = `precision ${prec} float;\nprecision ${prec} int;\n`;
 
     const uniforms = {
@@ -390,9 +431,7 @@ function SurfaceAura({
         vec3 nW = normalize(mat3(modelMatrix) * normal);
         vec3 up = vec3(0.0, 1.0, 0.0);
         vec3 t = normalize(cross(up, nW));
-        if (length(t) < 0.01) {
-          t = normalize(cross(vec3(1.0, 0.0, 0.0), nW));
-        }
+        if (length(t) < 0.01) t = normalize(cross(vec3(1.0, 0.0, 0.0), nW));
         vec3 b = normalize(cross(nW, t));
 
         vec3 pos = position + (normalize(normalMatrix * normal) * uShell);
@@ -519,14 +558,16 @@ function SurfaceAura({
       precision: prec,
       name: "SurfaceAuraMat",
     });
-  }, [alpha, gl]);
+  }, [alpha, gl, viewport]);
 
-  const auraGroup = useMemo(
-    () => buildLayerGroup(baseScene, material),
-    [baseScene, material],
-  );
+  const auraGroup = useMemo(() => (enabled ? buildLayerGroup(baseScene, material) : null), [
+    baseScene,
+    material,
+    enabled,
+  ]);
 
   useEffect(() => {
+    if (!enabled) return;
     const cfg = VIEW[viewport];
     if (!group.current) return;
 
@@ -536,15 +577,16 @@ function SurfaceAura({
     (camera as THREE.PerspectiveCamera).position.set(...cfg.camera.pos);
     (camera as THREE.PerspectiveCamera).fov = cfg.camera.fov;
     (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-  }, [camera, viewport, scaleMul]);
+  }, [camera, viewport, scaleMul, enabled]);
 
   useFrame((_, dt) => {
+    if (!enabled) return;
     const u = material.uniforms as Record<string, { value: number }>;
     if (!reduce && u?.uTime) u.uTime.value += dt;
-    if (group.current) {
-      group.current.rotation.set(ROT_X, ROT_Y + rig.current.rotY, 0);
-    }
+    if (group.current) group.current.rotation.set(ROT_X, ROT_Y + rig.current.rotY, 0);
   });
+
+  if (!enabled || !auraGroup) return null;
 
   return (
     <group ref={group} renderOrder={1}>
@@ -558,12 +600,14 @@ function BackTrail({
   baseScene,
   rig,
   viewport,
+  enabled,
   scaleMul = 1.04,
-  alpha = 0.5,
+  alpha = 0.12,
 }: {
   baseScene: THREE.Object3D;
   rig: RigRef;
   viewport: ViewportMode;
+  enabled: boolean;
   scaleMul?: number;
   alpha?: number;
 }) {
@@ -572,7 +616,8 @@ function BackTrail({
   const { camera, gl } = useThree();
 
   const material = useMemo(() => {
-    const prec = pickGLSLPrecision(gl);
+    const isMobile = viewport === "mobile";
+    const prec = pickGLSLPrecision(gl, isMobile);
     const header = `precision ${prec} float;\nprecision ${prec} int;\n`;
 
     const uniforms = {
@@ -675,15 +720,8 @@ function BackTrail({
         world.xyz += f * (uCurlAmp * 0.28)
           + trail * (0.25 + 0.75 * fbm(p * 0.5 + uTime * 0.2));
 
-        float fres = pow(
-          1.0 - max(dot(nW, viewDir), 0.0),
-          1.2
-        );
-        float top = smoothstep(
-          -0.2,
-          0.5,
-          (modelMatrix * vec4(position, 1.0)).y
-        );
+        float fres = pow(1.0 - max(dot(nW, viewDir), 0.0), 1.2);
+        float top = smoothstep(-0.2, 0.5, (modelMatrix * vec4(position, 1.0)).y);
         vIntensity = clamp(0.25 + 0.75 * fres, 0.0, 1.0) * (0.6 + 0.4 * top);
         vWPos = world.xyz;
 
@@ -771,14 +809,16 @@ function BackTrail({
       precision: prec,
       name: "BackTrailMat",
     });
-  }, [alpha, gl]);
+  }, [alpha, gl, viewport]);
 
-  const trailGroup = useMemo(
-    () => buildLayerGroup(baseScene, material),
-    [baseScene, material],
-  );
+  const trailGroup = useMemo(() => (enabled ? buildLayerGroup(baseScene, material) : null), [
+    baseScene,
+    material,
+    enabled,
+  ]);
 
   useEffect(() => {
+    if (!enabled) return;
     const cfg = VIEW[viewport];
     if (!group.current) return;
 
@@ -788,15 +828,16 @@ function BackTrail({
     (camera as THREE.PerspectiveCamera).position.set(...cfg.camera.pos);
     (camera as THREE.PerspectiveCamera).fov = cfg.camera.fov;
     (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-  }, [camera, viewport, scaleMul]);
+  }, [camera, viewport, scaleMul, enabled]);
 
   useFrame((_, dt) => {
+    if (!enabled) return;
     const u = material.uniforms as Record<string, { value: number }>;
     if (!reduce && u?.uTime) u.uTime.value += dt;
-    if (group.current) {
-      group.current.rotation.set(ROT_X, ROT_Y + rig.current.rotY, 0);
-    }
+    if (group.current) group.current.rotation.set(ROT_X, ROT_Y + rig.current.rotY, 0);
   });
+
+  if (!enabled || !trailGroup) return null;
 
   return (
     <group ref={group} renderOrder={0}>
@@ -808,19 +849,21 @@ function BackTrail({
 /* ===== NebulaBackplate (fondo) ===== */
 function NebulaBackplate({
   viewport,
+  enabled,
   size = 5.0,
-  scaleMul = 0.43,
+  scaleMul = 0.45,
   backDist = 0.3,
-  intensity = 0.78,
-  alpha = 1.2,
+  intensity = 0.82,
+  alpha = 1.05,
   tintA = "#f472b6",
   tintB = "#7c3aed",
   tintC = "#a855f7",
-  flow = 0.28,
+  flow = 0.32,
   offsetModel = [0, 0, 0] as [number, number, number],
   offsetBillboard = [0.0, 0.63] as [number, number],
 }: {
   viewport: ViewportMode;
+  enabled: boolean;
   size?: number;
   scaleMul?: number;
   backDist?: number;
@@ -838,7 +881,7 @@ function NebulaBackplate({
 
   const mat = useMemo(() => {
     const isMobile = viewport === "mobile";
-    const prec = pickGLSLPrecision(gl, isMobile); // mobile: mediump
+    const prec = pickGLSLPrecision(gl, isMobile);
     const header = `precision ${prec} float;\nprecision ${prec} int;\n`;
 
     const uniforms = {
@@ -922,9 +965,10 @@ function NebulaBackplate({
           uv + 0.045 * vec2(fbm(uv * 3.0), fbm(uv * 2.6 + 7.7)),
           1.7
         );
+
         float radial = length(uv);
         float radialMask = smoothstep(1.1, 0.6, radial + 0.25 * fbm(uv * 3.5 + uTime * 0.1));
-        float shapeMask = smoothstep(1.2, 0.7, s + 0.2 * fbm(uv * 3.8 + uTime * 0.08));
+        float shapeMask  = smoothstep(1.2, 0.7, s + 0.2 * fbm(uv * 3.8 + uTime * 0.08));
 
         float mask = mix(shapeMask, radialMask, 0.45);
         mask *= smoothstep(0.05, 0.85, t);
@@ -952,15 +996,14 @@ function NebulaBackplate({
   }, [alpha, intensity, tintA, tintB, tintC, flow, gl, viewport]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (!group.current) return;
-    const cfg = VIEW[viewport];
 
+    const cfg = VIEW[viewport];
     const adapt = Math.min(cfg.modelScale, 1.0);
     const s = size * adapt * scaleMul;
 
-    const base = new THREE.Vector3(...cfg.modelPos).add(
-      new THREE.Vector3(...offsetModel),
-    );
+    const base = new THREE.Vector3(...cfg.modelPos).add(new THREE.Vector3(...offsetModel));
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(
       (camera as THREE.PerspectiveCamera).quaternion,
     );
@@ -978,22 +1021,22 @@ function NebulaBackplate({
       .add(up.multiplyScalar(offsetBillboard[1] * s));
 
     group.current.position.copy(pos);
-    group.current.quaternion.copy(
-      (camera as THREE.PerspectiveCamera).quaternion,
-    );
+    group.current.quaternion.copy((camera as THREE.PerspectiveCamera).quaternion);
     group.current.scale.set(s, s, 1);
-  }, [camera, viewport, size, scaleMul, backDist, offsetModel, offsetBillboard]);
+  }, [camera, viewport, size, scaleMul, backDist, offsetModel, offsetBillboard, enabled]);
 
   useFrame((_, dt) => {
-    const speed = viewport === "mobile" ? 0.85 : 1.35;
+    if (!enabled) return;
+    const speed = viewport === "mobile" ? 0.85 : 1.2;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mat.uniforms as any).uTime.value += dt * speed;
 
     if (group.current) {
-      group.current.quaternion.copy(
-        (camera as THREE.PerspectiveCamera).quaternion,
-      );
+      group.current.quaternion.copy((camera as THREE.PerspectiveCamera).quaternion);
     }
   });
+
+  if (!enabled) return null;
 
   return (
     <group ref={group} renderOrder={-1}>
@@ -1005,19 +1048,19 @@ function NebulaBackplate({
   );
 }
 
-/* ===== Wrapper de capas: carga el GLTF una sola vez ===== */
+/* ===== Wrapper de capas ===== */
 function CrowLayers({
   src,
   rig,
-  quality,
-  effectsActive,
   viewport,
+  effectsActive,
+  lowPower,
 }: {
   src: string;
   rig: RigRef;
-  quality: "low" | "high";
-  effectsActive: boolean;
   viewport: ViewportMode;
+  effectsActive: boolean;
+  lowPower: boolean;
 }) {
   const gltf = useGLTF(src);
   const baseScene = gltf.scene as THREE.Object3D;
@@ -1028,48 +1071,46 @@ function CrowLayers({
 
   const isMobile = viewport === "mobile";
 
-  const nebulaEnabled = effectsActive && (quality === "high" || isMobile);
-  const trailEnabled = quality === "high" && effectsActive;
+  const nebulaEnabled = effectsActive && !lowPower;
+  const trailEnabled = effectsActive && !lowPower && !isMobile;
+  const auraEnabled = effectsActive && !lowPower && !isMobile;
 
   return (
     <>
-      {nebulaEnabled && (
-        <NebulaBackplate
-          viewport={viewport}
-          intensity={isMobile ? 0.7 : 0.86}
-          alpha={isMobile ? 0.85 : 1.3}
-          flow={isMobile ? 0.26 : 0.34}
-          scaleMul={isMobile ? 0.39 : 0.45}
-          backDist={isMobile ? 0.22 : 0.3}
-        />
-      )}
+      <NebulaBackplate
+        enabled={nebulaEnabled}
+        viewport={viewport}
+        intensity={isMobile ? 0.72 : 0.86}
+        alpha={isMobile ? 0.88 : 1.12}
+        flow={isMobile ? 0.26 : 0.32}
+        scaleMul={isMobile ? 0.4 : 0.45}
+        backDist={isMobile ? 0.22 : 0.3}
+      />
 
-      {trailEnabled && (
-        <BackTrail
-          baseScene={baseScene}
-          rig={rig}
-          viewport={viewport}
-          scaleMul={0.75}
-          alpha={0.12}
-        />
-      )}
+      <BackTrail
+        enabled={trailEnabled}
+        baseScene={baseScene}
+        rig={rig}
+        viewport={viewport}
+        scaleMul={0.75}
+        alpha={0.12}
+      />
 
       <CrowModel baseScene={baseScene} rig={rig} viewport={viewport} />
 
-      {!isMobile && (
-        <SurfaceAura
-          baseScene={baseScene}
-          rig={rig}
-          viewport={viewport}
-          scaleMul={1.0}
-          alpha={effectsActive ? 0.5 : 0.25}
-        />
-      )}
+      <SurfaceAura
+        enabled={auraEnabled}
+        baseScene={baseScene}
+        rig={rig}
+        viewport={viewport}
+        scaleMul={1.0}
+        alpha={0.5}
+      />
     </>
   );
 }
 
-/* ===== Escena principal con fallback WebGL ===== */
+/* ===== Escena principal ===== */
 export default function Model3D({
   src,
   poster,
@@ -1077,49 +1118,49 @@ export default function Model3D({
   className,
   eventSource,
   effectsActive = true,
+  renderActive = true,
 }: Props) {
   const viewport = useViewportMode();
   const isMobile = viewport === "mobile";
-
-  const quality: "low" | "high" = isMobile ? "low" : "high";
+  const reduce = usePrefersReducedMotion();
 
   const initialSupportsWebGL = useMemo(() => canUseWebGL(), []);
   const [hasWebGLError, setHasWebGLError] = useState(false);
+
+  const [lowPower, setLowPower] = useState(false);
+
   const shouldRenderCanvas = initialSupportsWebGL && !hasWebGLError;
 
   const dpr = useMemo<[number, number]>(() => {
-    if (isMobile) return [0.75, 0.95];
-    if (quality === "low") return [1.0, 1.35];
-    return [1.05, 1.6];
-  }, [isMobile, quality]);
+    if (lowPower) return [0.7, 1.0];
+    if (isMobile) return [0.75, 1.0];
+    if (viewport === "tablet") return [0.9, 1.2];
+    return [1.0, 1.35];
+  }, [isMobile, viewport, lowPower]);
 
   const rig = useRef<{ rotY: number }>({ rotY: 0 });
 
+  const runtimeActive = renderActive && !reduce;
+
   return (
     <div
-      className={["relative block w-full h-full bg-transparent", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={["relative block w-full h-full bg-transparent", className].filter(Boolean).join(" ")}
       aria-label={alt}
     >
       {poster && !shouldRenderCanvas && (
-        <img
-          src={poster}
-          alt={alt}
-          className="block w-full h-full object-cover"
-          loading="lazy"
-        />
+        <img src={poster} alt={alt} className="block w-full h-full object-cover" loading="lazy" />
       )}
 
       {shouldRenderCanvas && (
         <Canvas
           camera={{ position: [-6.6, 2.2, 6.9], fov: 28 }}
-          shadows={!isMobile && quality === "high"}
+          shadows={false}
           dpr={dpr}
           eventSource={eventSource?.current ?? undefined}
           eventPrefix="client"
+          frameloop={renderActive ? "always" : "never"}
           gl={{
-            antialias: !isMobile,
+            antialias: !isMobile && !lowPower,
             alpha: true,
             powerPreference: "high-performance",
             toneMapping: THREE.ACESFilmicToneMapping,
@@ -1127,32 +1168,41 @@ export default function Model3D({
           onCreated={({ gl, scene }) => {
             gl.setClearColor("#000000", 0);
             gl.outputColorSpace = THREE.SRGBColorSpace;
-            gl.shadowMap.enabled = !isMobile && quality === "high";
-            gl.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            gl.toneMappingExposure = isMobile ? 1.2 : 1.0;
-            scene.fog = new THREE.FogExp2(0x050214, isMobile ? 0.014 : 0.024);
+            gl.shadowMap.enabled = false;
 
-            const canvas = gl.domElement as HTMLCanvasElement;
-            const handleContextError = () => setHasWebGLError(true);
+            gl.toneMappingExposure = isMobile ? 1.15 : 1.0;
 
-            canvas.addEventListener("webglcontextlost", handleContextError);
-            canvas.addEventListener(
-              "webglcontextcreationerror",
-              handleContextError,
-            );
+            scene.fog = new THREE.FogExp2(0x050214, lowPower ? 0.016 : isMobile ? 0.014 : 0.02);
           }}
         >
-          {/* Desktop/Tablet normal */}
+          <WakeOnActive active={renderActive} />
+
+          <WebGLContextGuard
+            onLost={() => {
+              setLowPower(true);
+              setHasWebGLError(true);
+            }}
+            onRestored={() => {
+              setHasWebGLError(false);
+              setLowPower(true);
+            }}
+          />
+
+          <PerformanceBudget
+            enabled={runtimeActive && effectsActive && !lowPower}
+            onLowPower={() => setLowPower(true)}
+          />
+
           <RigMouseYaw rig={rig} viewport={viewport} maxYaw={0.16} lerp={0.08} />
 
-          {/* ✅ Mobile: drag MÁS sensible + más margen */}
+          {/* ✅ Mobile drag que NO bloquea scroll */}
           <RigMobileDragYaw
             rig={rig}
-            enabled={isMobile}
+            enabled={isMobile && renderActive}
             eventEl={eventSource?.current ?? null}
             maxYaw={0.62}
-            sensitivity={2.9}
+            sensitivity={2.4}
             lerp={0.18}
           />
 
@@ -1160,35 +1210,25 @@ export default function Model3D({
             <ambientLight intensity={isMobile ? 0.42 : 0.25} />
             {isMobile && <hemisphereLight intensity={0.55} />}
 
-            <directionalLight
-              position={[3, 5, 2]}
-              intensity={isMobile ? 1.1 : 0.95}
-              castShadow={quality === "high" && !isMobile}
-            />
+            <directionalLight position={[3, 5, 2]} intensity={isMobile ? 1.05 : 0.9} />
 
-            {effectsActive && (
-              <pointLight
-                position={[0, 2, 7]}
-                intensity={isMobile ? 0.28 : 0.42}
-                color="#fb3797"
-              />
+            {effectsActive && !lowPower && (
+              <pointLight position={[0, 2, 7]} intensity={isMobile ? 0.24 : 0.36} color="#fb3797" />
             )}
 
             <CrowLayers
               src={src}
               rig={rig}
-              quality={quality}
-              effectsActive={effectsActive}
               viewport={viewport}
+              effectsActive={effectsActive && runtimeActive}
+              lowPower={lowPower || reduce || !renderActive}
             />
 
             <Environment
               preset="dawn"
-              resolution={isMobile ? 32 : 256}
+              resolution={lowPower ? 32 : isMobile ? 32 : viewport === "tablet" ? 64 : 96}
               background={false}
             />
-
-            <Preload all />
           </Suspense>
         </Canvas>
       )}

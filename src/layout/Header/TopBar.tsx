@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,26 +14,35 @@ import LanguageSwitch from "./LanguageSwitch";
 import { cn } from "@/utils/cn";
 import { startTransitionOverlay } from "@/layout/RootProviders/TransitionOverlay.client";
 
+type HeaderTone = "base" | "inverse";
+
 type TopBarProps = {
   locale?: string;
   ctaLabel?: string;
+  /** Controlado por el Header (por sección). Si no llega, cae a lógica por ruta. */
+  tone?: HeaderTone;
 };
 
-/** TopBar transparente: sin blur ni borde; tinta adaptable por ruta */
+/** TopBar transparente: sin blur ni borde; tinta adaptable por sección/ruta */
 export default function TopBar({
   locale: localeProp,
   ctaLabel: ctaLabelProp,
+  tone,
 }: TopBarProps) {
-  const brand = site?.name ?? "Agencia";
+  const brand = site?.name ?? "Black Crow";
 
   const pathname = usePathname() || "/es";
   const firstSeg = pathname.split("/").filter(Boolean)[0] || "es";
   const inferredLocale = normalizeLocale(firstSeg);
   const locale = normalizeLocale(localeProp ?? inferredLocale);
 
+  // Fallback por ruta (servicios suele ir sobre surface-inverse)
   const onServicesDark =
     pathname.startsWith(`/${locale}/servicios`) ||
     pathname.startsWith(`/${locale}/services`);
+
+  const resolvedTone: HeaderTone =
+    onServicesDark ? "inverse" : (tone ?? "base");
 
   const homeHref = `/${locale}`;
 
@@ -92,15 +102,29 @@ export default function TopBar({
     });
   }, [trackCtaClick, locale]);
 
+  const markSrc =
+    resolvedTone === "inverse"
+      ? "/logos/brand-mark-light.svg"
+      : "/logos/brand-mark.svg";
+
+  // Tamaño controlado por spacing (sin hardcodear px)
+  const markSizeClass =
+    "h-[calc(var(--spacing)*20)] w-[calc(var(--spacing)*20)]";
+
+  // ✅ “Más abajo” sin romper el layout: solo movemos el SVG dentro del Link
+  // Ajusta el factor si lo quieres aún más abajo.
+  const markOffsetYClass = "translate-y-[calc(var(--spacing)*1.25)]";
+
   return (
     <div
       className={cn(
         "sticky top-0 z-(--z-header)",
-        onServicesDark ? "text-(--text-inverse)" : "text-(--text)",
+        resolvedTone === "inverse" ? "text-(--text-inverse)" : "text-(--text)",
       )}
+      data-header-tone={resolvedTone}
     >
       <Container className="flex items-center justify-between gap-3 h-(--header-h)">
-        {/* LOGO */}
+        {/* LOGO (Mark) */}
         <Link
           href={homeHref}
           aria-label={brand}
@@ -109,29 +133,31 @@ export default function TopBar({
             "hover:text-(--pink-500)",
           )}
         >
-          <span className="text-lg md:text-xl font-semibold tracking-tight leading-none">
-            {brand}
-          </span>
+          <Image
+            src={markSrc}
+            alt={brand}
+            width={160}
+            height={160}
+            priority
+            className={cn(markSizeClass, "shrink-0", markOffsetYClass)}
+          />
+          <span className="sr-only">{brand}</span>
         </Link>
 
         {/* ACCIONES: SOLO DESDE md */}
         <div className="hidden md:flex items-center gap-3">
           <LanguageSwitch />
 
-          {/* CTA: fondo negro sólido (NO transparente); borde finito cambia; hover rosado se mantiene */}
+          {/* CTA: tokens (sin hardcodear colores) */}
           <Button
             asChild
             variant="solid"
             size="md"
             className={cn(
               "border shadow-none transition-[background-color,border-color,transform,opacity] duration-200",
-              // fondo negro sólido
-              "bg-black",
-              // borde finito base
-              "border-[rgba(255,255,255,0.18)]",
-              // hover rosado (mantener) + borde un poco más visible
-              "hover:bg-(--pink-500) hover:border-[rgba(255,255,255,0.28)]",
-              // active
+              "bg-(--btn-bg) text-(--btn-fg)",
+              "border-[color-mix(in_oklab,var(--btn-border)_70%,transparent)]",
+              "hover:bg-(--pink-500) hover:border-[color-mix(in_oklab,var(--btn-border)_85%,transparent)]",
               "active:scale-[0.98]",
             )}
           >
