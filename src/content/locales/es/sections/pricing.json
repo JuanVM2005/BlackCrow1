@@ -2,7 +2,7 @@
   "kind": "pricing",
   "data": {
     "heading": {
-      "titleLines": ["Elige tu Plan,", "Despega", "HOY"]
+      "titleLines": ["Elige tu web,", "Despega", "HOY"]
     },
     "aside": [
       "— Todas diseñadas desde cero, con código real y obsesión por los detalles.",
@@ -10,24 +10,24 @@
         "type": "p",
         "children": [
           { "text": "Incluimos " },
-          { "text": "hosting + dominio", "strong": true },
-          { "text": " gratis por " },
+          { "text": "configuración de hosting y dominio", "strong": true },
+          { "text": " estandar por " },
           { "text": "1 año", "strong": true },
-          { "text": " en todos los planes." }
+          { "text": " sin costos adicionales." }
         ]
       }
     ],
     "plans": [
       {
         "id": "launch",
-        "name": "Lanzamiento",
-        "price": { "amount": "S/ 990", "period": "único" },
+        "name": "Landing Page",
+        "price": { "amount": "S/ 700", "period": "S/ 900" },
         "features": [
           "1 página (hero + secciones clave)",
-          "Animaciones suaves (Lenis + GSAP básico)",
-          "Optimización de performance y accesibilidad",
-          "Analytics + SEO base",
-          "Hosting + dominio 1 año"
+          "Diseño visual moderno",
+          "Diseño adaptativo (mobile-first)",
+          "Dominio estándar incluido por 1 año",
+          "Formulario de contacto funcional"
         ],
         "cta": {
           "label": "Empezar",
@@ -36,16 +36,16 @@
       },
       {
         "id": "pro",
-        "name": "Profesional",
+        "name": "WebSite",
         "badge": "Más popular",
         "featured": true,
-        "price": { "amount": "S/ 1,890", "period": "único" },
+        "price": { "amount": "S/ 1,000", "period": "S/ 1,500" },
         "features": [
           "Sitio multipágina (3–5 secciones)",
           "Micro-interacciones y escenas scroll",
           "SEO técnico + OpenGraph + Sitemap",
-          "Blog/CMS listo",
-          "Soporte 30 días"
+          "Performance optimizada (Core Web Vitals)",
+          "Formulario de contacto funcional"
         ],
         "cta": {
           "label": "Cotizar Proyecto",
@@ -54,14 +54,14 @@
       },
       {
         "id": "elite",
-        "name": "Elite",
-        "price": "A medida",
+        "name": "E-Commerce",
+        "price": { "amount": "S/ 1,600", "period": "A medida" },
         "features": [
-          "Arquitectura a medida (Next 15 + R3F)",
-          "Shaders / 3D / animaciones avanzadas",
+          "Cátalo de productos y colecciones",
+          "Carrito y checkout integrados",
           "Pasarela de pago e integraciones",
           "Panel admin & flujos complejos",
-          "Acompañamiento experto"
+          "Escalable: cupones, reseñas y más"
         ],
         "cta": {
           "label": "Agenda una llamada",

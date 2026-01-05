@@ -199,6 +199,7 @@ function Switch({
   required,
   label,
   disabled,
+  hint,
 }: {
   id: string;
   checked: boolean;
@@ -206,14 +207,16 @@ function Switch({
   required?: boolean;
   label: string;
   disabled?: boolean;
+  hint?: string;
 }) {
   return (
     <label
       className={cn(
         "grid grid-cols-[44px_minmax(0,1fr)] items-start gap-(--radius-md)",
         "select-none",
-        disabled && "opacity-60 cursor-not-allowed",
+        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
       )}
+      title={disabled ? hint : undefined}
     >
       <span className="pt-0.5">
         <input
@@ -225,6 +228,7 @@ function Switch({
           onChange={(e) => onChange(e.currentTarget.checked)}
           aria-required={required}
           disabled={disabled}
+          aria-disabled={disabled ? "true" : undefined}
         />
 
         {/* track */}
@@ -237,6 +241,8 @@ function Switch({
             "transition-[background-color,border-color,opacity] duration-200",
             "peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-(--ring)",
             "peer-checked:bg-(--accent-500) peer-checked:border-(--accent-500)",
+            // ✅ disabled (plomo)
+            "peer-disabled:bg-(--btn-bg-muted) peer-disabled:border-(--border-card) peer-disabled:opacity-70",
           )}
         >
           {/* thumb */}
@@ -247,6 +253,8 @@ function Switch({
               "h-5 w-5 rounded-(--radius-full) bg-(--text-inverse)",
               "transition-transform duration-200",
               checked ? "translate-x-5" : "translate-x-1",
+              // ✅ disabled: evita “sensación interactiva”
+              disabled && "opacity-80",
             )}
           />
         </span>
@@ -254,6 +262,9 @@ function Switch({
 
       <Text className="text-(--text-muted) leading-snug text-[0.92rem]">
         {label}
+        {disabled && hint ? (
+          <span className="opacity-75"> · {hint}</span>
+        ) : null}
       </Text>
     </label>
   );
@@ -283,8 +294,12 @@ export default function ContactSection({
   const { locale, serviceKey } = useContactMeta();
   const socials = React.useMemo(() => pickSocialItemsFromSite(), []);
 
+  // ✅ Newsletter deshabilitado (plomo) hasta tener la función
+  const newsletterDisabled = true;
+  const newsletterHint = locale === "es" ? "Próximamente" : "Coming soon";
+
   const [newsletter, setNewsletter] = React.useState<boolean>(
-    form.consent.newsletter.defaultChecked ?? false,
+    newsletterDisabled ? false : (form.consent.newsletter.defaultChecked ?? false),
   );
   const [acceptPrivacy, setAcceptPrivacy] = React.useState<boolean>(
     form.consent.privacy.defaultChecked ?? false,
@@ -308,10 +323,11 @@ export default function ContactSection({
 
   const onToggleNewsletter = React.useCallback(
     (v: boolean) => {
+      if (newsletterDisabled) return; // ✅ no permite cambios
       resetFeedbackIfNeeded();
       setNewsletter(v);
     },
-    [resetFeedbackIfNeeded],
+    [resetFeedbackIfNeeded, newsletterDisabled],
   );
 
   const onTogglePrivacy = React.useCallback(
@@ -324,7 +340,7 @@ export default function ContactSection({
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const formEl = e.currentTarget; // ✅ referencia estable
+    const formEl = e.currentTarget;
 
     if (isSubmitting) return;
 
@@ -346,7 +362,7 @@ export default function ContactSection({
       lastName: String(fd.get("lastName") ?? "").trim(),
       email: String(fd.get("email") ?? "").trim(),
       message: String(fd.get("message") ?? "").trim(),
-      newsletter,
+      newsletter: newsletterDisabled ? false : newsletter, // ✅ nunca enviamos newsletter si está “próximamente”
       acceptPrivacy,
       serviceKey,
       locale,
@@ -361,10 +377,8 @@ export default function ContactSection({
         body: JSON.stringify(payload),
       });
 
-      // por si el backend devuelve problem details
       const data = await res.json().catch(() => null);
 
-      // ✅ si hubo otra submit después, ignora esta
       if (myRequestId !== requestIdRef.current) return;
 
       if (!res.ok) {
@@ -388,7 +402,7 @@ export default function ContactSection({
       });
 
       formEl.reset();
-      setNewsletter(form.consent.newsletter.defaultChecked ?? false);
+      setNewsletter(newsletterDisabled ? false : (form.consent.newsletter.defaultChecked ?? false));
       setAcceptPrivacy(form.consent.privacy.defaultChecked ?? false);
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -460,7 +474,6 @@ export default function ContactSection({
               {heading}
             </Heading>
 
-            {/* (si quieres ocultar description, deja el JSON vacío o quita este bloque) */}
             {description ? (
               <Text className="mt-3 text-(--text-muted)">{description}</Text>
             ) : null}
@@ -530,10 +543,11 @@ export default function ContactSection({
               <div className="mt-6 grid gap-4 max-w-[520px]">
                 <Switch
                   id="newsletter"
-                  checked={newsletter}
+                  checked={newsletterDisabled ? false : newsletter}
                   onChange={onToggleNewsletter}
                   label={form.consent.newsletter.label}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || newsletterDisabled}
+                  hint={newsletterHint}
                 />
 
                 <Switch
@@ -571,7 +585,6 @@ export default function ContactSection({
                     </Button>
                   </motion.div>
 
-                  {/* feedback pequeño, sin contenedor */}
                   {state.status === "success" || state.status === "error" ? (
                     <Text
                       aria-live="polite"

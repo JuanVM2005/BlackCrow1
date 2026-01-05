@@ -1,29 +1,21 @@
 {
-    "title": "Service details",
-    "intro": "Scope and guidelines for your online store.",
-    "sections": [
-      {
-        "title": "What’s included",
-        "items": [
-          "Product catalog and collections.",
-          "Cart, checkout and enabled payment gateways.",
-          "Shipping configuration and order statuses.",
-          "Basic SEO for product pages.",
-          "Performance optimization and caching."
-        ]
-      },
-      {
-        "title": "Deliverables",
-        "items": [
-          "Ready-to-operate implementation.",
-          "Training on product creation and management.",
-          "Best practices guide for photos and descriptions."
-        ]
-      }
-    ],
-    "footnotes": [
-      "Payment gateways and transactional fees are handled with the provider.",
-      "Advanced features (coupons, reviews, memberships) are quoted separately."
-    ]
-  }
-  
+  "title": "Service details",
+  "intro": "Scope and considerations for the E-commerce service.",
+  "sections": [
+    {
+      "title": "What’s included",
+      "items": [
+        "Product catalog and collections.",
+        "Operational cart and checkout.",
+        "Enabled payment gateways.",
+        "Basic order management.",
+        "Basic SEO for product pages."
+      ]
+    }
+  ],
+  "footnotes": [
+    "Pricing varies depending on the number of products and required features.",
+    "Professional hosting and external integrations are quoted separately.",
+    "Bulk product uploads and advanced automations are not included."
+  ]
+}

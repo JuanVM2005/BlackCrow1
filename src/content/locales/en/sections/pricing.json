@@ -1,31 +1,33 @@
 {
   "kind": "pricing",
   "data": {
-    "heading": { "titleLines": ["Choose your Plan,", "Take Off", "TODAY"] },
+    "heading": {
+      "titleLines": ["Choose your website,", "Launch", "TODAY"]
+    },
     "aside": [
-      "— All crafted from scratch with real code and an obsession for detail.",
+      "— All projects are designed from scratch, with real code and an obsession for detail.",
       {
         "type": "p",
         "children": [
           { "text": "We include " },
-          { "text": "hosting + domain", "strong": true },
-          { "text": " free for " },
+          { "text": "standard hosting and domain setup", "strong": true },
+          { "text": " for " },
           { "text": "1 year", "strong": true },
-          { "text": " in every plan." }
+          { "text": " at no additional cost." }
         ]
       }
     ],
     "plans": [
       {
         "id": "launch",
-        "name": "Launch",
-        "price": { "amount": "S/ 990", "period": "one-time" },
+        "name": "Landing Page",
+        "price": { "amount": "S/ 700", "period": "S/ 900" },
         "features": [
-          "1 page (hero + key sections)",
-          "Smooth animations (Lenis + basic GSAP)",
-          "Performance & accessibility optimization",
-          "Analytics + baseline SEO",
-          "Hosting + domain 1 year"
+          "Single-page layout (hero + key sections)",
+          "Modern visual design",
+          "Responsive design (mobile-first)",
+          "Standard domain included for 1 year",
+          "Fully functional contact form"
         ],
         "cta": {
           "label": "Get Started",
@@ -34,16 +36,16 @@
       },
       {
         "id": "pro",
-        "name": "Professional",
+        "name": "Website",
         "badge": "Most popular",
         "featured": true,
-        "price": { "amount": "S/ 1,890", "period": "one-time" },
+        "price": { "amount": "S/ 1,000", "period": "S/ 1,500" },
         "features": [
-          "Multipage site (3–5 sections)",
-          "Micro-interactions & scroll scenes",
+          "Multi-page website (3–5 sections)",
+          "Micro-interactions and scroll-based scenes",
           "Technical SEO + OpenGraph + Sitemap",
-          "Blog/CMS ready",
-          "30-day support"
+          "Performance optimized (Core Web Vitals)",
+          "Fully functional contact form"
         ],
         "cta": {
           "label": "Request a Quote",
@@ -52,21 +54,21 @@
       },
       {
         "id": "elite",
-        "name": "Elite",
-        "price": "Custom",
+        "name": "E-Commerce",
+        "price": { "amount": "S/ 1,600", "period": "Custom" },
         "features": [
-          "Bespoke architecture (Next 15 + R3F)",
-          "Shaders / 3D / advanced animations",
-          "Payments & integrations",
-          "Admin panel & complex flows",
-          "Expert guidance"
+          "Product catalog and collections",
+          "Integrated cart and checkout",
+          "Payment gateway and third-party integrations",
+          "Admin panel & advanced workflows",
+          "Scalable: coupons, reviews, and more"
         ],
         "cta": {
-          "label": "Book a Call",
+          "label": "Schedule a Call",
           "href": "/en/services/ecommerce"
         }
       }
     ],
-    "disclaimer": "Prices may vary based on final scope. Contact us and we’ll tailor the plan to your needs."
+    "disclaimer": "Prices may vary depending on the final scope. Contact us and we’ll tailor the plan to your needs."
   }
 }

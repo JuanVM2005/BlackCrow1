@@ -4,22 +4,22 @@
   "header": {
     "badge": "Service",
     "title": "Website",
-    "subtitle": "A clear, fast, scalable corporate site that grows with your brand."
+    "subtitle": "A clear, fast, and scalable corporate website that grows with your brand."
   },
-  "priceRange": "S/. 1,800 – S/. 3,500",
+  "priceRange": "S/. 1,000 – S/. 1,500",
   "featuresLeft": [
-    "Information architecture & UX",
+    "Information architecture and UX",
     "Essential pages (Home, Services, About, Contact)",
-    "Responsive & accessible design"
+    "Responsive and accessible design"
   ],
   "featuresRight": [
-    "Analytics integration + basic technical SEO",
-    "Performance-minded (Core Web Vitals)",
-    "Initial content guidance and support"
+    "Analytics integration and basic technical SEO",
+    "Functional contact form",
+    "Optimized performance (Core Web Vitals)"
   ],
-  "tags": ["Website", "Scalable", "SEO", "Accessible"],
+  "tags": ["Website", "Scalable", "Professional", "UI/UX"],
   "seo": {
     "title": "Corporate Website — Professional web design & development",
-    "description": "Scalable websites with clear UX, solid performance and basic technical SEO to grow alongside your brand."
+    "description": "Scalable websites with clear UX, basic technical SEO, and optimized performance to grow alongside your brand."
   }
 }

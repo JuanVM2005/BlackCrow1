@@ -205,22 +205,18 @@ function RigMobileDragYaw({
     const onPointerDown = (e: PointerEvent) => {
       isDown.current = true;
       lastX.current = e.clientX;
-      // despertamos un frame (por si frameloop estaba en "never" y lo activaron)
       invalidate();
     };
 
     const onPointerMove = (e: PointerEvent) => {
       if (!isDown.current) return;
 
-      // delta X incremental: no “captura”, así el scroll sigue funcionando.
       const dx = (e.clientX - lastX.current) / Math.max(1, size.width);
       lastX.current = e.clientX;
 
-      // sumamos un pequeño delta al target, con clamp
       const next = target.current + dx * sensitivity * maxYaw;
       target.current = clamp(next, -maxYaw, maxYaw);
 
-      // si renderActive está en true, igual invalida ayuda a respuesta rápida
       invalidate();
     };
 
@@ -228,7 +224,6 @@ function RigMobileDragYaw({
       isDown.current = false;
     };
 
-    // ✅ passive true => nunca bloquea scroll
     el.addEventListener("pointerdown", onPointerDown, { passive: true });
     el.addEventListener("pointermove", onPointerMove, { passive: true });
     el.addEventListener("pointerup", end, { passive: true });
@@ -341,7 +336,6 @@ function CrowModel({
     camera.fov = cfg.camera.fov;
     camera.updateProjectionMatrix();
 
-    // ✅ sombras OFF (mantén estética con iluminación + env)
     baseScene.traverse((obj) => {
       if (!isMesh(obj)) return;
 
@@ -1055,12 +1049,14 @@ function CrowLayers({
   viewport,
   effectsActive,
   lowPower,
+  onLoaded,
 }: {
   src: string;
   rig: RigRef;
   viewport: ViewportMode;
   effectsActive: boolean;
   lowPower: boolean;
+  onLoaded?: () => void;
 }) {
   const gltf = useGLTF(src);
   const baseScene = gltf.scene as THREE.Object3D;
@@ -1068,6 +1064,12 @@ function CrowLayers({
   useEffect(() => {
     useGLTF.preload(src);
   }, [src]);
+
+  // ✅ avisamos al parent cuando el GLB ya está listo
+  useEffect(() => {
+    onLoaded?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gltf]);
 
   const isMobile = viewport === "mobile";
 
@@ -1110,6 +1112,94 @@ function CrowLayers({
   );
 }
 
+/* ===== Overlay de carga (poster / shimmer) ===== */
+function LoadingOverlay({
+  visible,
+  poster,
+  alt,
+}: {
+  visible: boolean;
+  poster?: string;
+  alt: string;
+}) {
+  return (
+    <div className={`bc-heroOverlay ${visible ? "isVisible" : "isHidden"}`} aria-hidden={!visible}>
+      {poster ? (
+        <img className="bc-heroPoster" src={poster} alt={alt} draggable={false} />
+      ) : (
+        <div className="bc-heroSkeleton" />
+      )}
+      <div className="bc-heroShimmer" />
+      <style jsx>{`
+        .bc-heroOverlay {
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          pointer-events: none;
+          overflow: hidden;
+          opacity: 1;
+          transition: opacity 420ms ease;
+          background: transparent;
+        }
+        .bc-heroOverlay.isHidden {
+          opacity: 0;
+        }
+
+        .bc-heroPoster {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transform: translateZ(0);
+        }
+
+        .bc-heroSkeleton {
+          position: absolute;
+          inset: 0;
+          border-radius: 0px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+        }
+
+        .bc-heroShimmer {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            100deg,
+            transparent 0%,
+            color-mix(in oklab, var(--text) 10%, transparent) 45%,
+            transparent 80%
+          );
+          transform: translateX(-60%);
+          animation: bcShimmer 1.25s ease-in-out infinite;
+          opacity: 0.55;
+          mix-blend-mode: overlay;
+        }
+
+        @keyframes bcShimmer {
+          0% {
+            transform: translateX(-60%);
+          }
+          100% {
+            transform: translateX(60%);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .bc-heroOverlay {
+            transition: none;
+          }
+          .bc-heroShimmer {
+            animation: none;
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 /* ===== Escena principal ===== */
 export default function Model3D({
   src,
@@ -1129,6 +1219,23 @@ export default function Model3D({
 
   const [lowPower, setLowPower] = useState(false);
 
+  // ✅ loading state del GLB (para fade del poster)
+  const [modelReady, setModelReady] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(!!poster);
+
+  useEffect(() => {
+    // si cambia el src, volvemos a mostrar overlay
+    setModelReady(false);
+    setOverlayVisible(true);
+  }, [src]);
+
+  // cuando el modelo está listo, ocultamos overlay con fade
+  useEffect(() => {
+    if (!modelReady) return;
+    const t = window.setTimeout(() => setOverlayVisible(false), 460);
+    return () => window.clearTimeout(t);
+  }, [modelReady]);
+
   const shouldRenderCanvas = initialSupportsWebGL && !hasWebGLError;
 
   const dpr = useMemo<[number, number]>(() => {
@@ -1147,8 +1254,14 @@ export default function Model3D({
       className={["relative block w-full h-full bg-transparent", className].filter(Boolean).join(" ")}
       aria-label={alt}
     >
+      {/* ✅ Si no hay WebGL o falló, mostramos poster estático (sin Canvas) */}
       {poster && !shouldRenderCanvas && (
         <img src={poster} alt={alt} className="block w-full h-full object-cover" loading="lazy" />
+      )}
+
+      {/* ✅ Overlay (poster + shimmer) mientras el GLB carga */}
+      {shouldRenderCanvas && (
+        <LoadingOverlay visible={overlayVisible} poster={poster} alt={alt} />
       )}
 
       {shouldRenderCanvas && (
@@ -1222,6 +1335,9 @@ export default function Model3D({
               viewport={viewport}
               effectsActive={effectsActive && runtimeActive}
               lowPower={lowPower || reduce || !renderActive}
+              onLoaded={() => {
+                if (!modelReady) setModelReady(true);
+              }}
             />
 
             <Environment

@@ -1,29 +1,21 @@
 {
-    "title": "Service details",
-    "intro": "Scope and considerations for the corporate Website.",
-    "sections": [
-      {
-        "title": "What’s included",
-        "items": [
-          "Information architecture and navigation map.",
-          "Base pages: Home, Services, About, Contact.",
-          "Basic technical SEO and per-page metadata.",
-          "Analytics integration and essential tags.",
-          "Performance oriented to Core Web Vitals."
-        ]
-      },
-      {
-        "title": "Deliverables",
-        "items": [
-          "Responsive design and implementation.",
-          "Content and typography guidance.",
-          "Short training for the team."
-        ]
-      }
-    ],
-    "footnotes": [
-      "Extra sections and blog/CMS are quoted separately.",
-      "Specific integrations (chat, CRM, etc.) require validation."
-    ]
-  }
-  
+  "title": "Service details",
+  "intro": "Scope and considerations of the corporate Website.",
+  "sections": [
+    {
+      "title": "What’s included",
+      "items": [
+        "Information architecture and navigation structure.",
+        "Sections defined at the beginning of the project.",
+        "Core pages: Home, Services, About, and Contact.",
+        "Basic technical SEO and essential metadata.",
+        "Performance optimized around Core Web Vitals."
+      ]
+    }
+  ],
+  "footnotes": [
+    "The scope covers only the sections defined at the start of the project.",
+    "Additional content, advanced animations, or integrations are quoted separately.",
+    "Domain and recurring services are not included by default."
+  ]
+}

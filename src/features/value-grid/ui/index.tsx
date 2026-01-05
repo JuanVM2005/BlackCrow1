@@ -145,8 +145,8 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
     <section aria-labelledby={titleId} className="relative">
       <div
         ref={containerRef}
-        className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 md:py-10"
-      >
+        className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 md:py-10"
+        >
         <header className="mb-4 md:mb-6 sticky top-10 md:top-12 z-0">
           {isMobile ? (
             <motion.h2

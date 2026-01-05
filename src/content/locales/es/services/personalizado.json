@@ -4,22 +4,22 @@
   "header": {
     "badge": "Servicio",
     "title": "Personalizado",
-    "subtitle": "Soluciones a medida para necesidades específicas y alto impacto."
+    "subtitle": "Desarrollamos soluciones digitales a medida, alineadas a los objetivos reales de tu proyecto."
   },
-  "priceRange": "Desde S/. 5,000",
+  "priceRange": "A medida",
   "featuresLeft": [
     "Descubrimiento y definición de alcance",
-    "Integraciones con APIs/servicios externos",
-    "Diseño de interacción y micro-animaciones"
+    "Integraciones con APIs y servicios externos",
+    "Diseño y desarrollo a medida"
   ],
   "featuresRight": [
     "Arquitectura escalable y mantenible",
-    "Observabilidad básica (logs, métricas)",
-    "Entrega por hitos con QA"
+    "Sistemas internos o dashboards",
+    "Acompañamiento técnico estratégico"
   ],
   "tags": ["Custom", "Integraciones", "APIs", "Escalable"],
   "seo": {
-    "title": "Proyecto personalizado — Desarrollo a medida",
-    "description": "Diseño y desarrollo a medida con integraciones, performance y escalabilidad, guiado por un proceso claro y por hitos."
+    "title": "Proyecto personalizado — Desarrollo digital a medida",
+    "description": "Soluciones digitales personalizadas con arquitectura escalable, integraciones avanzadas y acompañamiento técnico estratégico."
   }
 }

@@ -160,7 +160,7 @@ export default function Modal({
               "w-full max-w-2xl",
               "rounded-2xl",
               "border border-(--border-card)",
-              "bg-(--surface-card) text-(--text)",
+              "bg-(--surface-card)",
               "shadow-xl",
               "focus-visible:ring-2 focus-visible:ring-(--ring)",
               className,

@@ -4,22 +4,22 @@
   "header": {
     "badge": "Servicio",
     "title": "E-commerce",
-    "subtitle": "Tu tienda online con checkout confiable, rápida y lista para escalar."
+    "subtitle": "Una tienda online pensada para vender hoy y escalar mañana, con una base sólida y profesional."
   },
-  "priceRange": "S/. 3,500 – S/. 8,000",
+  "priceRange": "S/. 1,600 – S/. 5,000",
   "featuresLeft": [
     "Catálogo de productos y colecciones",
     "Carrito y checkout integrados",
     "Pasarelas de pago locales e internacionales"
   ],
   "featuresRight": [
-    "Gestión de envíos y estados",
+    "Gestión básica de productos y pedidos",
     "SEO para fichas de producto",
     "Escalable: cupones, reseñas y más"
   ],
-  "tags": ["Tienda", "Checkout", "Pagos", "Escalable"],
+  "tags": ["Ecommerce", "Ventas Online", "Escalable", "Negocio Digital"],
   "seo": {
-    "title": "E-commerce — Tienda online rápida y segura",
-    "description": "Construimos tu tienda online enfocada en conversión, con pasarelas de pago seguras, SEO de producto y alto rendimiento."
+    "title": "E-commerce — Tienda online profesional y escalable",
+    "description": "Tiendas online diseñadas para vender y crecer, con checkout integrado, pasarelas de pago seguras y SEO para productos."
   }
 }

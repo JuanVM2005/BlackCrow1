@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { motion } from "framer-motion";
 import Typography from "@/ui/Typography";
 import type { ServiceFormJSON } from "@/content/schemas/serviceForm.schema";
@@ -25,13 +26,10 @@ export default function ServiceInquiryForm({
 
   // Limita a 500 caracteres
   const [msg, setMsg] = useState("");
-  const onMessageInput = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const raw = e.target.value ?? "";
-      setMsg(raw.length <= 500 ? raw : raw.slice(0, 500));
-    },
-    [],
-  );
+  const onMessageInput = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
+    const raw = e.target.value ?? "";
+    setMsg(raw.length <= 500 ? raw : raw.slice(0, 500));
+  }, []);
 
   // Estado de envío
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
@@ -54,7 +52,7 @@ export default function ServiceInquiryForm({
   }, [status, resolvedLocale]);
 
   const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
+    async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setStatus("loading");
 
@@ -66,7 +64,7 @@ export default function ServiceInquiryForm({
         lastName: String(fd.get(lastName.id) ?? "").trim(),
         email: String(fd.get(email.id) ?? "").trim(),
         message: msg.trim(),
-        newsletter: fd.get(newsletter.id) != null,
+        newsletter: fd.get(newsletter.id) != null, // ✅ al estar disabled, siempre será false
         acceptPrivacy: fd.get(acceptPrivacy.id) != null,
         serviceKey: resolvedServiceKey,
         locale: resolvedLocale,
@@ -105,7 +103,14 @@ export default function ServiceInquiryForm({
 
   const isSubmitting = status === "loading";
 
-  // ===== Desktop (manteniendo la idea, pero sin clases [] no-canónicas) =====
+  // ✅ Newsletter deshabilitado (plomo) hasta tener la función
+  const newsletterDisabled = true;
+  const newsletterHint =
+    resolvedLocale === "es"
+      ? "Próximamente"
+      : "Coming soon";
+
+  // ===== Desktop =====
   const inputBase =
     "peer block w-full bg-transparent text-(--text-inverse) " +
     "placeholder:text-(--text-inverse) placeholder:opacity-70 " +
@@ -131,11 +136,17 @@ export default function ServiceInquiryForm({
     "transition-all duration-200 will-change-transform " +
     "group-hover:scale-[1.05] " +
     "peer-checked:bg-(--accent-500) peer-checked:border-(--accent-500) " +
-    "peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-(--accent-500)";
+    "peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-(--accent-500) " +
+    // ✅ disabled styles (plomo)
+    "peer-disabled:bg-(--btn-bg-muted) peer-disabled:border-(--border-card) " +
+    "peer-disabled:opacity-70 peer-disabled:shadow-none " +
+    "peer-disabled:group-hover:scale-100";
 
   const checkSvg =
     "opacity-0 scale-75 transition-all duration-200 ease-out " +
-    "peer-checked:opacity-100 peer-checked:scale-100";
+    "peer-checked:opacity-100 peer-checked:scale-100 " +
+    // ✅ disabled (si algún día viene marcado desde el navegador, lo apagamos visualmente)
+    "peer-disabled:opacity-0 peer-disabled:scale-75";
 
   // ===== Mobile-only =====
   const mobileFieldWrap =
@@ -336,9 +347,11 @@ export default function ServiceInquiryForm({
               placeholder={message.placeholder}
               rows={message.rows ?? 6}
               maxLength={500}
-              className={[inputBase, "resize-none overflow-auto", mobileInput].join(
-                " ",
-              )}
+              className={[
+                inputBase,
+                "resize-none overflow-auto",
+                mobileInput,
+              ].join(" ")}
               value={msg}
               onChange={onMessageInput}
             />
@@ -352,13 +365,21 @@ export default function ServiceInquiryForm({
           </div>
         </motion.div>
 
-        {/* Newsletter */}
+        {/* Newsletter (plomo / deshabilitado) */}
         <motion.div {...animItem(4)} className="md:col-span-2">
-          <label className="group inline-flex items-center gap-(--radius-md) cursor-pointer select-none">
+          <label
+            className={[
+              "group inline-flex items-center gap-(--radius-md) select-none",
+              newsletterDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer",
+            ].join(" ")}
+            title={newsletterDisabled ? newsletterHint : undefined}
+          >
             <input
               id="newsletter"
               name={newsletter.id}
               type="checkbox"
+              disabled={newsletterDisabled}
+              aria-disabled={newsletterDisabled ? "true" : undefined}
               className="peer sr-only"
             />
             <span className={checkboxBox} aria-hidden>
@@ -373,9 +394,18 @@ export default function ServiceInquiryForm({
                 />
               </svg>
             </span>
-            <Typography.Text as="span" size="sm" className="opacity-90">
-              {newsletter.label}
-            </Typography.Text>
+
+            <div className="flex items-center gap-(--radius-sm)">
+              <Typography.Text as="span" size="sm" className="opacity-90">
+                {newsletter.label}
+              </Typography.Text>
+
+              {newsletterDisabled ? (
+                <Typography.Text as="span" size="sm" className="opacity-70">
+                  · {newsletterHint}
+                </Typography.Text>
+              ) : null}
+            </div>
           </label>
         </motion.div>
 
@@ -422,7 +452,6 @@ export default function ServiceInquiryForm({
               "bg-transparent",
               "shadow-(--shadow-sm)",
 
-              // aurora border + inner core (tokens/util global)
               "before:absolute before:inset-0 before:content-['']",
               "before:bg-g-card before:opacity-80",
               "before:transition-opacity before:duration-200",

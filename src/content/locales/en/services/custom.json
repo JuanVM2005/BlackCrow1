@@ -4,22 +4,22 @@
   "header": {
     "badge": "Service",
     "title": "Custom",
-    "subtitle": "Tailored solutions for specific needs and high impact."
+    "subtitle": "We build tailor-made digital solutions aligned with the real goals of your project."
   },
-  "priceRange": "From S/. 5,000",
+  "priceRange": "Custom pricing",
   "featuresLeft": [
     "Discovery and scope definition",
-    "Integrations with APIs/external services",
-    "Interaction design & micro-animations"
+    "Integrations with APIs and external services",
+    "Custom design and development"
   ],
   "featuresRight": [
     "Scalable and maintainable architecture",
-    "Basic observability (logs, metrics)",
-    "Milestone-based delivery with QA"
+    "Internal systems or dashboards",
+    "Strategic technical guidance"
   ],
   "tags": ["Custom", "Integrations", "APIs", "Scalable"],
   "seo": {
-    "title": "Custom Project — Tailored development",
-    "description": "Bespoke design and development with integrations, performance and scalability, guided by a clear milestone-based process."
+    "title": "Custom Project — Tailored digital development",
+    "description": "Custom digital solutions with scalable architecture, advanced integrations, and strategic technical guidance."
   }
 }

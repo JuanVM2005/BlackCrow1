@@ -3,7 +3,12 @@
 
 import Image from "next/image";
 import React from "react";
-import { motion, useReducedMotion, cubicBezier, type Variants } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  cubicBezier,
+  type Variants,
+} from "framer-motion";
 import Container from "@/ui/Container";
 import { Heading } from "@/ui/Typography";
 import { cn } from "@/utils/cn";
@@ -47,7 +52,10 @@ const GLOW_SCHEMES: GlowScheme[] = [
     top: "radial-gradient(circle, #ff8a00aa, #e52e71aa)",
     bottom: "radial-gradient(circle, #662d8caa, #ed1e79aa)",
   },
-  { top: "radial-gradient(circle, #fff4, #9992)", bottom: "radial-gradient(circle, #ccc3, #7772)" },
+  {
+    top: "radial-gradient(circle, #fff4, #9992)",
+    bottom: "radial-gradient(circle, #ccc3, #7772)",
+  },
   {
     top: "radial-gradient(circle, #61dafbaa, #20232a66)",
     bottom: "radial-gradient(circle, #282c34aa, #61dafbaa)",
@@ -60,8 +68,14 @@ const GLOW_SCHEMES: GlowScheme[] = [
     top: "radial-gradient(circle, #56ab2faa, #a8e063aa)",
     bottom: "radial-gradient(circle, #3ca55caa, #b5ac49aa)",
   },
-  { top: "radial-gradient(circle, #434343aa, #000a)", bottom: "radial-gradient(circle, #2c3e50aa, #000a)" },
-  { top: "radial-gradient(circle, #f96a, #ff5e62aa)", bottom: "radial-gradient(circle, #7f00ffaa, #e100ffaa)" },
+  {
+    top: "radial-gradient(circle, #434343aa, #000a)",
+    bottom: "radial-gradient(circle, #2c3e50aa, #000a)",
+  },
+  {
+    top: "radial-gradient(circle, #f96a, #ff5e62aa)",
+    bottom: "radial-gradient(circle, #7f00ffaa, #e100ffaa)",
+  },
 ];
 
 const SECTION_GLOW_INDICES: number[][] = [
@@ -74,6 +88,11 @@ type CardProps = {
   item?: StackGridItemWithDesc;
   glowScheme: GlowScheme;
 };
+
+function isSvg(src: string): boolean {
+  const clean = src.split("?")[0].split("#")[0];
+  return clean.toLowerCase().endsWith(".svg");
+}
 
 function Card({ item, glowScheme }: CardProps) {
   if (!item || !item.icon) return null;
@@ -89,19 +108,17 @@ function Card({ item, glowScheme }: CardProps) {
         "shadow-(--shadow-sm) transition-all duration-500 ease-in-out",
         "outline-none focus-visible:ring-2 ring-(--ring)",
         "overflow-hidden",
-        // ✅ MOBILE/TABLET: el slide fuerza cuadrado -> la card llena el contenedor
         "w-full h-full",
-        // ✅ WINDOWS/DESKTOP: rectángulo primero, crece en hover (como antes)
-        "md:h-[150px] md:w-auto md:hover:h-[220px]"
+        "md:h-[150px] md:w-auto md:hover:h-[220px]",
       )}
     >
-      {/* ✅ Glow: mobile/tablet SIEMPRE activo | desktop solo hover */}
+      {/* Glow */}
       <div className="pointer-events-none absolute inset-0">
         <div
           className={cn(
             "absolute -top-28 -left-28 w-80 h-80 rounded-full blur-3xl",
             "opacity-100 md:opacity-0 md:group-hover:opacity-100",
-            "transition-opacity duration-500 ease-out"
+            "transition-opacity duration-500 ease-out",
           )}
           style={{ background: glowScheme.top }}
         />
@@ -109,7 +126,7 @@ function Card({ item, glowScheme }: CardProps) {
           className={cn(
             "absolute -bottom-28 -right-28 w-80 h-80 rounded-full blur-3xl",
             "opacity-100 md:opacity-0 md:group-hover:opacity-100",
-            "transition-opacity duration-500 ease-out"
+            "transition-opacity duration-500 ease-out",
           )}
           style={{ background: glowScheme.bottom }}
         />
@@ -118,14 +135,29 @@ function Card({ item, glowScheme }: CardProps) {
       <div className="relative z-1 flex flex-col h-full">
         <div className="flex flex-col gap-2">
           <div className="shrink-0">
-            <Image
-              src={item.icon}
-              alt={item.alt ?? ""}
-              width={56}
-              height={56}
-              sizes="(min-width: 768px) 56px, 48px"
-              className="rounded-md"
-            />
+            {isSvg(item.icon) ? (
+              // ✅ SVG: usa <img> para evitar warnings de next/image en DEV
+              <img
+                src={item.icon}
+                alt={item.alt ?? ""}
+                width={56}
+                height={56}
+                className="rounded-md"
+                style={{ width: 56, height: 56 }}
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              // ✅ Raster (webp/png/jpg): Next/Image normal
+              <Image
+                src={item.icon}
+                alt={item.alt ?? ""}
+                width={56}
+                height={56}
+                sizes="(min-width: 768px) 56px, 48px"
+                className="rounded-md"
+              />
+            )}
           </div>
 
           <span className="text-lg md:text-xl font-medium">{item.label}</span>
@@ -135,12 +167,10 @@ function Card({ item, glowScheme }: CardProps) {
           <div
             className={cn(
               "text-sm text-(--neutral-300)",
-              // ✅ Mobile/tablet visible + acomodado
               "mt-4 opacity-100 translate-y-0",
-              // ✅ Desktop vuelve a hover animado como antes
               "md:mt-8 md:opacity-0 md:translate-y-4",
               "transition-all duration-500 ease-in-out",
-              "md:group-hover:opacity-100 md:group-hover:translate-y-0"
+              "md:group-hover:opacity-100 md:group-hover:translate-y-0",
             )}
           >
             {item.description}
@@ -161,7 +191,6 @@ type GroupProps = {
 function Group({ group, sectionIndex }: GroupProps) {
   const indicesForSection = SECTION_GLOW_INDICES[sectionIndex] ?? [];
 
-  // ===== Animación entrada 1x1 (como value-grid) =====
   const prefersReducedMotion = useReducedMotion();
   const EASE = React.useMemo(() => cubicBezier(0.2, 0.8, 0.2, 1), []);
 
@@ -176,7 +205,7 @@ function Group({ group, sectionIndex }: GroupProps) {
       hidden: {},
       show: {
         transition: {
-          delayChildren: 0.26, // 👈 delay notorio al entrar a la sección
+          delayChildren: 0.26,
           staggerChildren: 0.14,
         },
       },
@@ -207,12 +236,11 @@ function Group({ group, sectionIndex }: GroupProps) {
   return (
     <section
       className={cn(
-        // ✅ Desktop: igual que antes
         "py-8 md:py-12 space-y-6",
         "w-full max-w-[1200px]",
         "h-auto md:h-[50vh]",
         "mx-auto",
-        "overflow-hidden"
+        "overflow-hidden",
       )}
     >
       {group.title && (
@@ -224,18 +252,14 @@ function Group({ group, sectionIndex }: GroupProps) {
       <motion.ul
         role="list"
         className={cn(
-          // ✅ WINDOWS/DESKTOP: GRID EXACTO como antes
           "md:grid md:gap-4 md:grid-cols-4 xl:grid-cols-5 md:overflow-hidden",
-          // ✅ Mobile/tablet: slider horizontal
           "flex md:flex-none",
           "gap-4",
           "overflow-x-auto md:overflow-x-visible",
           "snap-x snap-mandatory md:snap-none",
           "px-6 md:px-0",
-          // ocultar scrollbar sin globals
           "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          // no bloquea scroll vertical
-          "overscroll-x-contain"
+          "overscroll-x-contain",
         )}
         variants={listVariants}
         initial="hidden"
@@ -252,14 +276,15 @@ function Group({ group, sectionIndex }: GroupProps) {
               role="listitem"
               variants={itemVariants}
               className={cn(
-                // ✅ Mobile/tablet: SIEMPRE cuadrado
                 "shrink-0 snap-start aspect-square",
                 "w-[min(220px,78vw)]",
-                // ✅ Desktop: vuelve al comportamiento normal del grid (no cuadrado)
-                "md:w-auto md:aspect-auto"
+                "md:w-auto md:aspect-auto",
               )}
             >
-              <Card item={item as StackGridItemWithDesc} glowScheme={glowScheme} />
+              <Card
+                item={item as StackGridItemWithDesc}
+                glowScheme={glowScheme}
+              />
             </motion.li>
           );
         })}
@@ -277,14 +302,13 @@ export default function StackGrid({ groups }: StackGridProps) {
 
   return (
     <div className="flex flex-col w-full">
-      {/* ✅ Desktop (Windows): 50vh como antes. Mobile/tablet: auto para no recortar */}
       {firstGroup && (
         <Container
           className={cn(
             "flex justify-center items-center",
             "w-full",
             "h-auto md:h-[50vh]",
-            "overflow-hidden"
+            "overflow-hidden",
           )}
         >
           <Group
@@ -301,7 +325,7 @@ export default function StackGrid({ groups }: StackGridProps) {
             "flex justify-center items-center",
             "w-full",
             "h-auto md:h-[50vh]",
-            "overflow-hidden"
+            "overflow-hidden",
           )}
         >
           <Group
@@ -318,7 +342,7 @@ export default function StackGrid({ groups }: StackGridProps) {
             "flex justify-center items-center",
             "w-full",
             "h-auto md:h-[50vh]",
-            "overflow-hidden"
+            "overflow-hidden",
           )}
         >
           <Group

@@ -293,7 +293,9 @@ export default function StudioIntro({
           <div
             ref={textRef}
             className={displayClass}
+            // ✅ (Paso 1) garantizamos container no-static para cálculos de scroll/offset
             style={{
+              position: "relative",
               textAlign: "justify",
               textJustify: "inter-word",
               hyphens: "auto",

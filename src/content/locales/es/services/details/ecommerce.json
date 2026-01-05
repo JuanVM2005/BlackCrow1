@@ -1,29 +1,21 @@
 {
-    "title": "Detalles del servicio",
-    "intro": "Alcance y lineamientos para tu tienda en línea.",
-    "sections": [
-      {
-        "title": "Qué incluye",
-        "items": [
-          "Catálogo de productos y colecciones.",
-          "Carrito, checkout y pasarelas de pago habilitadas.",
-          "Configuración de envíos y estados de pedido.",
-          "SEO básico para fichas de productos.",
-          "Optimización de rendimiento y caché."
-        ]
-      },
-      {
-        "title": "Entregables",
-        "items": [
-          "Implementación lista para operar.",
-          "Capacitación sobre carga y gestión de productos.",
-          "Guía de buenas prácticas para fotos y descripciones."
-        ]
-      }
-    ],
-    "footnotes": [
-      "Pasarelas de pago y costos transaccionales se gestionan con el proveedor.",
-      "Funcionalidades avanzadas (cupones, reseñas, membresías) se cotizan aparte."
-    ]
-  }
-  
+  "title": "Detalles del servicio",
+  "intro": "Alcance y consideraciones del servicio E-commerce.",
+  "sections": [
+    {
+      "title": "Qué incluye",
+      "items": [
+        "Catálogo de productos y colecciones.",
+        "Carrito y checkout operativos.",
+        "Pasarelas de pago habilitadas.",
+        "Gestión básica de pedidos.",
+        "SEO básico para fichas de producto."
+      ]
+    }
+  ],
+  "footnotes": [
+    "El precio varía según la cantidad de productos y funcionalidades requeridas.",
+    "Hosting profesional e integraciones externas se cotizan aparte.",
+    "No incluye carga masiva de productos ni automatizaciones avanzadas."
+  ]
+}

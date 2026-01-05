@@ -201,7 +201,7 @@ export default function Hero(props: HeroProps) {
               "relative min-h-[70vh] md:min-h-[70vh]",
               "md:flex md:flex-row md:items-center md:justify-center md:gap-0",
               "-mx-4 sm:mx-0",
-              "contain-[paint]",
+              "contain-[layout]",
             ].join(" ")}
           >
             {/* Modelo: fondo en mobile, columna izquierda en desktop */}

@@ -31,9 +31,10 @@ function jumpToFirstExistingId(ids: string[]): boolean {
  * - BottomDock guarda bc_target_section = "pricing" y navega a /es
  * - Al montar la home, este componente:
  *    - lee la clave
+ *    - ✅ la consume (la borra) inmediatamente para evitar saltos en recargas
  *    - espera a que el layout esté listo
  *    - reintenta varias veces hasta encontrar la sección
- *    - salta directo a ella (sin scroll suave) y limpia la clave
+ *    - salta directo a ella (sin scroll suave)
  */
 export default function HomeSectionJump() {
   React.useEffect(() => {
@@ -41,6 +42,13 @@ export default function HomeSectionJump() {
 
     const target = window.sessionStorage.getItem(TARGET_KEY);
     if (!target) return;
+
+    // ✅ Consumimos la intención apenas se lee (evita “saltos fantasmas” al recargar)
+    try {
+      window.sessionStorage.removeItem(TARGET_KEY);
+    } catch {
+      // ignoramos errores de storage
+    }
 
     let cancelled = false;
 
@@ -78,19 +86,11 @@ export default function HomeSectionJump() {
         const jumped = jumpToFirstExistingId(ids);
 
         if (jumped) {
-          // Si logramos posicionar, limpiamos la intención
-          try {
-            window.sessionStorage.removeItem(TARGET_KEY);
-          } catch {
-            // ignoramos errores de storage
-          }
-
           if (intervalId !== null) {
             window.clearInterval(intervalId);
             intervalId = null;
           }
         } else if (attempts >= maxAttempts) {
-          // Si no se encontró tras varios intentos, dejamos de intentarlo
           if (intervalId !== null) {
             window.clearInterval(intervalId);
             intervalId = null;

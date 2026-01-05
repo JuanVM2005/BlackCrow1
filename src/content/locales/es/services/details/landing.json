@@ -1,29 +1,31 @@
 {
-    "title": "Detalles del servicio",
-    "intro": "Información ampliada sobre el alcance de la Landing Page.",
-    "sections": [
-      {
-        "title": "Qué incluye",
-        "items": [
-          "Diseño visual adaptativo (mobile-first).",
-          "Implementación accesible con buenas prácticas SEO básico.",
-          "1 formulario de contacto con validaciones.",
-          "Hasta 3 secciones personalizadas de contenido.",
-          "Optimización de performance inicial (imágenes y fuentes)."
-        ]
-      },
-      {
-        "title": "Entregables",
-        "items": [
-          "Código fuente versionado.",
-          "Implementación en hosting administrado.",
-          "Guía breve de edición de contenidos."
-        ]
-      }
-    ],
-    "footnotes": [
-      "Plazos y costos pueden variar según cambios de alcance.",
-      "Integraciones externas o animaciones avanzadas se cotizan aparte."
-    ]
-  }
-  
+  "title": "Detalles del servicio",
+  "intro": "Información general sobre el alcance de la Landing Page.",
+  "sections": [
+    {
+      "title": "Qué incluye",
+      "items": [
+        "Diseño visual adaptativo (mobile-first).",
+        "Estructura enfocada en conversión con SEO básico.",
+        "1 formulario de contacto funcional.",
+        "Hasta 3 secciones personalizadas de contenido.",
+        "Optimización inicial de performance."
+      ]
+    },
+    {
+      "title": "Entregables",
+      "items": [
+        "Landing page publicada y operativa.",
+        "Configuración en hosting administrado.",
+        "Guía básica para edición de contenidos."
+      ]
+    }
+  ],
+  "footnotes": [
+    "La landing corresponde a una sola sección continua (no multipágina).",
+    "El dominio incluido aplica solo para versiones estándar.",
+    "Dominios premium o especiales se cotizan aparte.",
+    "Renovación anual de dominio y soporte no incluidos.",
+    "Cambios de alcance pueden afectar plazos y costos."
+  ]
+}

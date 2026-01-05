@@ -46,22 +46,33 @@ function pxToWorld(
 }
 
 /**
- * ✅ ScrollY only while enabled (evita listeners permanentes).
+ * ✅ ScrollY only while enabled (evita listeners permanentes)
+ * + opcional: dispara invalidate en scroll (clave para frameloop="demand")
  */
-function useScrollY(enabled: boolean) {
+function useScrollY(enabled: boolean, onScroll?: () => void) {
   const yRef = React.useRef(0);
 
   React.useEffect(() => {
     if (!enabled) return;
 
+    let raf = 0;
     const update = () => {
       yRef.current = window.scrollY || window.pageYOffset || 0;
+      onScroll?.();
+    };
+
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
     };
 
     update();
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, [enabled]);
+    window.addEventListener("scroll", schedule, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      cancelAnimationFrame(raf);
+    };
+  }, [enabled, onScroll]);
 
   return yRef;
 }
@@ -88,7 +99,6 @@ function PhoneRig({
 }) {
   const reducedMotion = useReducedMotion();
   const { startEl, targetEl } = usePhoneAnchors();
-  const scrollY = useScrollY(active);
 
   const group = React.useRef<THREE.Group>(null);
 
@@ -115,8 +125,10 @@ function PhoneRig({
 
       const collect = (mat: any) => {
         if (!mat) return;
+        // ✅ transparente, pero más “barato”
         mat.transparent = true;
-        mat.depthWrite = true;
+        mat.depthWrite = false;
+        mat.depthTest = true;
         mats.push(mat);
       };
 
@@ -126,7 +138,10 @@ function PhoneRig({
     matsRef.current = mats;
   }, [gltf.scene]);
 
-  const { viewport, size } = useThree();
+  const { viewport, size, invalidate } = useThree();
+
+  // ✅ invalidar cuando hay scroll (porque usaremos frameloop="demand")
+  const scrollY = useScrollY(active, () => invalidate());
 
   const anim = React.useRef({
     x: 0,
@@ -138,9 +153,6 @@ function PhoneRig({
     opacity: 0,
   });
 
-  /**
-   * ✅ Cache targets (evita getBoundingClientRect en cada frame)
-   */
   const targetsRef = React.useRef<Targets | null>(null);
   const lastInRange = React.useRef<boolean>(false);
 
@@ -185,13 +197,8 @@ function PhoneRig({
     const endScale = Math.min(sx, sy) * 1.5 * SCALE_FACTOR;
     const startScale = endScale * 1.15;
 
-    /**
-     * ✅ RANGO “NORMAL”:
-     * - pre: aparece un poco antes del start
-     * - post: desaparece después de pasar el target (o sea, ya pasaste la sección)
-     */
     const pre = startDocY - window.innerHeight * 0.35;
-    const post = targetDocY + window.innerHeight * 0.60;
+    const post = targetDocY + window.innerHeight * 0.6;
 
     targetsRef.current = {
       startW,
@@ -222,7 +229,10 @@ function PhoneRig({
     let raf = 0;
     const schedule = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => recomputeTargets());
+      raf = requestAnimationFrame(() => {
+        recomputeTargets();
+        invalidate(); // ✅ importante para demand
+      });
     };
 
     schedule();
@@ -234,18 +244,22 @@ function PhoneRig({
       window.removeEventListener("scroll", schedule);
       cancelAnimationFrame(raf);
     };
-  }, [active, recomputeTargets]);
+  }, [active, recomputeTargets, invalidate]);
 
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
 
+    const mats = matsRef.current;
+
     // Si no estamos activos, desvanecer y salir rápido
     if (!active) {
       anim.current.opacity = damp(anim.current.opacity, 0, 14, dt);
       g.visible = anim.current.opacity > 0.01;
-      const mats = matsRef.current;
       for (let i = 0; i < mats.length; i++) (mats[i] as any).opacity = anim.current.opacity;
+
+      // ✅ en demand, seguir pidiendo frames hasta apagar del todo
+      if (anim.current.opacity > 0.001) invalidate();
       return;
     }
 
@@ -254,8 +268,8 @@ function PhoneRig({
     if (!startEl || !targetEl || !targets) {
       anim.current.opacity = damp(anim.current.opacity, 0, 12, dt);
       g.visible = anim.current.opacity > 0.01;
-      const mats = matsRef.current;
       for (let i = 0; i < mats.length; i++) (mats[i] as any).opacity = anim.current.opacity;
+      if (anim.current.opacity > 0.001) invalidate();
       return;
     }
 
@@ -264,7 +278,6 @@ function PhoneRig({
 
     const inRange = scrollY.current >= targets.pre && scrollY.current <= targets.post;
 
-    // Notifica cambios de rango (para gatear el Canvas arriba)
     if (inRange !== lastInRange.current) {
       lastInRange.current = inRange;
       onRangeChange?.(inRange);
@@ -295,8 +308,18 @@ function PhoneRig({
     g.rotation.set(anim.current.rx, anim.current.ry, anim.current.rz);
     g.scale.setScalar(anim.current.s);
 
-    const mats = matsRef.current;
     for (let i = 0; i < mats.length; i++) (mats[i] as any).opacity = anim.current.opacity;
+
+    // ✅ demand: pedir frames mientras esté animando (posición/opacity)
+    if (!reducedMotion) {
+      const moving =
+        Math.abs(targetOpacity - anim.current.opacity) > 0.002 ||
+        Math.abs(tx - anim.current.x) > 0.002 ||
+        Math.abs(ty - anim.current.y) > 0.002 ||
+        Math.abs(ts - anim.current.s) > 0.002;
+
+      if (moving) invalidate();
+    }
   });
 
   return (
@@ -328,7 +351,6 @@ export default function PhoneOverlay({
   const anchorsReady = !!startEl && !!targetEl;
   const shouldBeActive = enabled && mounted && anchorsReady && inRange;
 
-  // Montaje/desmontaje con delay corto para evitar overlap de canvases al scrollear
   React.useEffect(() => {
     if (shouldBeActive) {
       setMountCanvas(true);
@@ -341,8 +363,8 @@ export default function PhoneOverlay({
   if (!enabled) return null;
   if (!mounted) return null;
 
-  // ✅ DPR cap seguro (evita context lost) + mobile-friendly
-  const dpr = reducedMotion ? ([0.9, 1.0] as const) : ([0.85, 1.25] as const);
+  // ✅ DPR aún más conservador (overlay fijo = caro)
+  const dpr = reducedMotion ? ([0.65, 0.9] as const) : ([0.6, 1.0] as const);
 
   return (
     <div
@@ -352,13 +374,13 @@ export default function PhoneOverlay({
     >
       <div ref={setEventEl} className="absolute inset-0 pointer-events-none" />
 
-      {/* ✅ Canvas SOLO cuando corresponde */}
       {eventEl && mountCanvas ? (
         <Canvas
           orthographic
           dpr={dpr as any}
           eventSource={eventEl as any}
-          frameloop="always"
+          // ✅ clave: no 60fps fijo
+          frameloop="demand"
           style={{
             position: "relative",
             width: "100%",
@@ -377,15 +399,12 @@ export default function PhoneOverlay({
             gl.outputColorSpace = THREE.SRGBColorSpace;
           }}
         >
-          <ambientLight intensity={0.9} />
-          <directionalLight intensity={0.9} position={[2, 3, 5]} />
+          {/* ✅ luces más baratas */}
+          <ambientLight intensity={0.75} />
+          <directionalLight intensity={0.65} position={[2, 3, 5]} />
 
           {anchorsReady ? (
-            <PhoneRig
-              src={src}
-              active={mountCanvas}
-              onRangeChange={(v) => setInRange(v)}
-            />
+            <PhoneRig src={src} active={mountCanvas} onRangeChange={setInRange} />
           ) : null}
         </Canvas>
       ) : (
@@ -402,7 +421,6 @@ export default function PhoneOverlay({
 
 /**
  * ✅ Watcher ultra-ligero (sin Canvas) para decidir cuándo montar el PhoneOverlay.
- * (No toca GPU; solo scroll/resize throttled por rAF)
  */
 function RangeWatcher({
   enabled,

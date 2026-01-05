@@ -1,28 +1,18 @@
 {
-    "title": "Service details",
-    "intro": "Tailored project based on objectives and technical constraints.",
-    "sections": [
-      {
-        "title": "Process",
-        "items": [
-          "Discovery and requirements definition.",
-          "Technical architecture and iteration plan.",
-          "Interaction design and micro-animations.",
-          "Integrations with APIs/external services."
-        ]
-      },
-      {
-        "title": "Deliverables",
-        "items": [
-          "Codebase and technical documentation.",
-          "Basic observability dashboards (logs, metrics).",
-          "Deployment plan and QA checklist."
-        ]
-      }
-    ],
-    "footnotes": [
-      "Final scope is defined in the proposal and managed by milestones.",
-      "Major scope changes impact schedule and budget."
-    ]
-  }
-  
+  "title": "Service details",
+  "intro": "Scope and conditions of the custom project.",
+  "sections": [
+    {
+      "title": "Considerations",
+      "items": [
+        "The scope is defined after an evaluation and discovery phase.",
+        "Technical and functional complexity is assessed on a case-by-case basis.",
+        "Development is tailored to the real objectives of the project."
+      ]
+    }
+  ],
+  "footnotes": [
+    "The budget is defined after evaluating scope and complexity.",
+    "Timelines and conditions are established in a custom proposal."
+  ]
+}

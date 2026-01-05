@@ -3,19 +3,19 @@
   "key": "landing",
   "header": {
     "badge": "Servicio",
-    "title": "Lanzamiento",
+    "title": "Landing page",
     "subtitle": "Da el salto digital con una landing page moderna, rápida y enfocada en resultados."
   },
-  "priceRange": "S/. 600 – S/. 900",
+  "priceRange": "S/. 700 – S/. 900",
   "featuresLeft": [
     "Landing page moderna y optimizada",
     "Diseño adaptativo (mobile-first)",
-    "Formularios integrados para captar clientes"
+    "Diseño visual moderno y personalizado"
   ],
   "featuresRight": [
-    "Hasta 3 secciones personalizadas",
-    "Dominio propio y hosting incluido 1 año",
-    "Carga rápida y SEO básico aplicado"
+    "Estructura enfocada en conversión",
+    "Formularios integrados para captar clientes",
+    "Dominio estándar incluido por 1 año"
   ],
   "tags": ["Lanzamiento", "Landing Page", "Rápido", "Económico"],
   "seo": {
