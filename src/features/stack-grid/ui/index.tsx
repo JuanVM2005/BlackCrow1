@@ -37,8 +37,8 @@ const GLOW_SCHEMES: GlowScheme[] = [
     bottom: "radial-gradient(circle, #8360c388, #2ebf9188)",
   },
   {
-    top: "radial-gradient(circle, #ff9a9eaa, #fad0c4aa)",
-    bottom: "radial-gradient(circle, #a1c4fd88, #c2e9fb88)",
+    top: "radial-gradient(circle, #1F1F1F, #5C1245)",
+    bottom: "radial-gradient(circle, #189400, #BF009C)",
   },
   {
     top: "radial-gradient(circle, #f7b733aa, #fc4a1aaa)",

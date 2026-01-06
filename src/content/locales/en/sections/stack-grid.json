@@ -5,9 +5,9 @@
       "items": [
         { "label": "Creativity", "icon": "/logos/stack/creativity.webp", "alt": "Creativity", "description": "To innovate without limits and craft unique ideas" },
         { "label": "Figma", "icon": "/logos/stack/figma.svg", "alt": "Figma", "description": "Collaborative interface design" },
-        { "label": "Spline", "icon": "/logos/stack/spline.svg", "alt": "Spline", "description": "Real-time interactive 3D design" },
+        { "label": "Affinity", "icon": "/logos/stack/affinity.png", "alt": "Affinity", "description": "Graphic design and visual composition." },
         { "label": "Blender", "icon": "/logos/stack/blender.svg", "alt": "Blender", "description": "3D modeling for unique assets" },
-        { "label": "Webflow", "icon": "/logos/stack/webflow.svg", "alt": "Webflow", "description": "Professional visual layout" }
+        { "label": "After Effects", "icon": "/logos/stack/adobeae.png", "alt": "After Effects", "description": "Animation and motion graphics." }
       ]
     },
     {
