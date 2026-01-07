@@ -1,14 +1,15 @@
 // src/core/seo/buildOgImageUrl.ts
 import { site } from "@/config/site";
-import { servicesSegmentByLocale } from "@/i18n/routing/static";
 
 type Locale = "es" | "en";
 
+/**
+ * ⚠️ Mantenemos el tipo por compatibilidad,
+ * pero ya NO se usa ningún parámetro dinámico.
+ */
 export type BuildOgImageParams = {
   locale: Locale;
-  /** Si se pasa slug → OG del detalle; si no → OG del índice */
   slug?: string;
-  /** Overrides opcionales para el renderer de la OG */
   titleOverride?: string;
   subtitle?: string;
   badge?: string;
@@ -24,21 +25,16 @@ export function buildAbsoluteUrl(path: string): string {
   return `${base}${rel}`;
 }
 
-/** Devuelve la URL absoluta de la imagen OG (índice o detalle) de Servicios */
-export function buildOgImageUrl(params: BuildOgImageParams): string {
-  const { locale, slug, titleOverride, subtitle, badge } = params;
-  const seg = servicesSegmentByLocale[locale];
-
-  // Ruta a opengraph-image del índice o del detalle
-  const pathname = slug
-    ? `/${locale}/${seg}/${slug}/opengraph-image`
-    : `/${locale}/${seg}/opengraph-image`;
-
-  const qs = new URLSearchParams();
-  if (titleOverride) qs.set("title", titleOverride);
-  if (subtitle) qs.set("subtitle", subtitle);
-  if (badge) qs.set("badge", badge);
-
-  const query = qs.toString();
-  return buildAbsoluteUrl(query ? `${pathname}?${query}` : pathname);
+/**
+ * ✅ Opción A — OG estático global
+ *
+ * - TODAS las rutas usan la misma imagen OG
+ * - No existe más generación dinámica por ruta
+ * - No se usan locale, slug ni overrides
+ *
+ * Fuente única:
+ *   public/og/default.png
+ */
+export function buildOgImageUrl(_params?: BuildOgImageParams): string {
+  return buildAbsoluteUrl(site.ogImage);
 }

@@ -3,10 +3,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * i18n strict + semantic slugs:
+ * i18n strict + semantic slugs (OG estático global):
  * - /es/contact  -> /es/contacto
  * - /en/contacto -> /en/contact
  * - Sin prefijo de locale → redirige a HOME del preferido (/es|/en).
+ *
+ * ✅ OG/Twitter ahora son 100% estáticos (public/og/*),
  */
 
 const LOCALES = new Set(["es", "en"]);
@@ -14,6 +16,7 @@ const DEFAULT_LOCALE = "es";
 
 /** Determina si la ruta debe saltarse el middleware */
 function shouldSkip(pathname: string): boolean {
+  // Rutas internas de Next / Vercel
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -22,14 +25,10 @@ function shouldSkip(pathname: string): boolean {
     return true;
   }
 
-  // ✅ Next OG/Twitter images pueden venir con sufijo: opengraph-image-xxxx / twitter-image-xxxx
-  // y también bajo /{locale}/...
-  if (pathname.includes("opengraph-image") || pathname.includes("twitter-image")) {
-    return true;
-  }
-
+  // Assets estáticos (incluye /og/default.png, favicons, imágenes, etc.)
   if (/\.[a-z0-9]+$/i.test(pathname)) return true;
 
+  // Rutas técnicas explícitas
   if (
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
@@ -47,7 +46,7 @@ function shouldSkip(pathname: string): boolean {
 
 export function middleware(req: NextRequest) {
   try {
-    // ✅ Edge-safe (evita "Invalid URL" en Vercel/Edge)
+    // Edge-safe
     const url = req.nextUrl.clone();
     const { pathname, search } = url;
 
@@ -130,7 +129,7 @@ export function middleware(req: NextRequest) {
     res.headers.set("X-Redirect-By", "middleware");
     return res;
   } catch (err) {
-    // ✅ evita 500 global por requests raras en Edge
+    // Evita 500 global por requests raras en Edge
     console.error("middleware_error", err);
     return NextResponse.next();
   }
@@ -143,6 +142,5 @@ function getPreferredLocale(req: NextRequest): "es" | "en" {
 }
 
 export const config = {
-  // ✅ matcher simple y estable; el filtrado real lo hace shouldSkip()
   matcher: ["/:path*"],
 };
