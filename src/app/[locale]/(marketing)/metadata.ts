@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import esHome from "@/content/locales/es/pages/home.json";
 import enHome from "@/content/locales/en/pages/home.json";
 import { normalizeLocale } from "@/i18n/locales";
+import { site } from "@/config/site";
 
 type Locale = "es" | "en";
 
@@ -41,6 +42,9 @@ export async function generateMetadata({
   const title = meta.title ?? fallbackTitle;
   const description = meta.description ?? fallbackDescription;
 
+  // ✅ Opción A: OG/Twitter SIEMPRE global y estático
+  const ogImage = site.ogImage; // "/og/default.png" (se resuelve absoluto por metadataBase en root layout)
+
   return {
     title,
     description,
@@ -49,13 +53,13 @@ export async function generateMetadata({
       description,
       type: "website",
       locale,
-      images: meta.ogImage ? [{ url: meta.ogImage }] : undefined,
+      images: [{ url: ogImage }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: meta.ogImage ? [meta.ogImage] : undefined,
+      images: [ogImage],
     },
     alternates: {
       languages: {

@@ -3,8 +3,7 @@
   "slug": "home",
   "meta": {
     "title": "Black Crow — Agencia Creativa & Tech",
-    "description": "Diseño UX/UI, branding y desarrollo web de alto impacto.",
-    "ogImage": "/og/home-es.png"
+    "description": "Diseño UX/UI, branding y desarrollo web de alto impacto."
   },
   "announcement": {
     "enabled": false,
