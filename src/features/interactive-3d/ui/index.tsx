@@ -14,9 +14,6 @@ import { Heading, Text } from "@/ui/Typography";
 // Hook para detectar si la sección está en viewport
 import { useSectionInView } from "@/hooks/useSectionInView";
 
-// ✅ Anchor para el iPhone (start)
-import { usePhoneAnchors } from "@/features/value-grid/ui/usePhoneAnchors";
-
 /**
  * Detecta Mobile (pantalla chica + sin hover/coarse pointer).
  * - No afecta Windows/desktop.
@@ -145,9 +142,6 @@ export default function Interactive3D({
     once: false,
   });
 
-  // ✅ Anchor start para PhoneOverlay (fin de Interactive3D)
-  const { startRef } = usePhoneAnchors();
-
   const isMobile = useIsMobile();
   const isLowResMobile = useIsLowResMobile(isMobile);
   const reducedMotion = usePrefersReducedMotionLocal();
@@ -242,7 +236,7 @@ export default function Interactive3D({
   }, [ref]);
 
   /**
-   * ✅ Gate de montaje del Canvas (CRÍTICO para que no compita con Hero/Phone)
+   * ✅ Gate de montaje del Canvas
    * - Monta cuando está “cerca” o “activo”
    * - Desmonta con delay corto para evitar overlap al scrollear
    */
@@ -354,7 +348,6 @@ export default function Interactive3D({
             height: s.bubbleH,
           }}
         >
-          {/* ✅ Canvas solo si corresponde (evita saturar GPU junto al Hero/Phone) */}
           {mountShader ? (
             <ShaderCanvas
               ariaLabel={ariaLabel}
@@ -387,14 +380,14 @@ export default function Interactive3D({
                 background: "transparent",
                 color: "var(--text-inverse)",
                 borderRadius: "var(--radius-sm)",
-                border: "calc(var(--header-h) * 0.0003) solid var(--neutral-800)",
+                border:
+                  "calc(var(--header-h) * 0.0003) solid var(--neutral-800)",
                 paddingBlock: s.barPadBlock,
                 paddingInline: s.barPadInline,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "flex-start",
                 gap: s.barGap,
-
                 ...barStyle,
               }}
             >
@@ -408,7 +401,6 @@ export default function Interactive3D({
                 textAlign: "center",
                 marginInline: "auto",
                 borderRadius: "var(--radius-lg)",
-
                 ...headlineWrapStyle,
               }}
             >
@@ -428,13 +420,6 @@ export default function Interactive3D({
             </div>
           </div>
         </Container>
-
-        {/* ✅ ANCHOR: fin de Interactive3D (donde “nace” el iPhone) */}
-        <div
-          ref={startRef}
-          aria-hidden="true"
-          style={{ position: "relative", width: 1, height: 1 }}
-        />
       </div>
     </Section>
   );

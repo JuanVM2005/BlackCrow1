@@ -37,41 +37,6 @@ export const site = {
     titleTemplate: "%s – Black Crow",
   },
 
-  // Config del Web App Manifest (tokens mapeados desde CSS global)
-  manifest: {
-    startUrl: "/",
-    scope: "/",
-    display: "standalone" as const,
-
-    // Colores base (alineados a tokens)
-    backgroundColor: "#FFFFFF",
-    themeColor: "#000000",
-
-    /**
-     * ✅ En tu estructura real existen:
-     * public/favicons/icon-192.png
-     * public/favicons/icon-512.png
-     * public/favicons/maskable-192.png
-     * public/favicons/maskable-512.png
-     */
-    icons: [
-      { src: "/favicons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/favicons/icon-512.png", sizes: "512x512", type: "image/png" },
-      {
-        src: "/favicons/maskable-192.png",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "maskable",
-      },
-      {
-        src: "/favicons/maskable-512.png",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
-      },
-    ],
-  },
-
   // Redes (no i18n)
   socials: {
     x: "https://x.com/blackcrow",
@@ -137,7 +102,6 @@ export function buildNav(localeInput?: string): NavItem[] {
 
   return [
     { id: "home", label: labels.home, href: base },
-    // ✅ Pricing SIEMPRE navega al home (sin hash). La lógica de scroll la maneja tu splash + JS.
     { id: "pricing", label: labels.pricing, href: base },
     { id: "contact", label: labels.contact, href: contactHref },
   ];

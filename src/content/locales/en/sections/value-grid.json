@@ -7,7 +7,7 @@
     },
     {
       "title": "Intuitive UI/UX design",
-      "body": "Tailor-made design\n& development",
+      "body": "Custom design\nand development",
       "widget": {
         "kind": "cms",
         "title": "CMS",
@@ -19,14 +19,18 @@
     },
     {
       "title": "Responsive",
-      "body": "Optimized for mobile and modern devices."
+      "body": "Mobile-friendly and optimized.",
+      "image": {
+        "src": "/images/value-grid/mobil.png",
+        "alt": "Mobile view of the website"
+      }
     },
     {
-      "title": "Total optimization",
+      "title": "Full optimization",
       "body": "Speed, SEO, and performance at the highest level.",
       "image": {
         "src": "/images/value-grid/cohete.svg",
-        "alt": "Rocket launch representing high performance"
+        "alt": "Rocket launching to represent high performance"
       }
     }
   ]

@@ -8,6 +8,7 @@ export * from './useKeyboardShortcut';
 export * from './usePrefersReducedMotion';
 export * from './useIntersectionObserver';
 export * from './useSectionInView';
+export * from './useHeroReady';
 
 // Si más adelante añades estos, descomenta:
 // export * from './usePrefersReducedMotion';

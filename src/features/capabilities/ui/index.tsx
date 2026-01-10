@@ -25,20 +25,27 @@ function readCssVarNumber(name: string, fallback: number): number {
 }
 
 /**
- * Gate: anima SOLO 1 VEZ cuando la sección entra al viewport y vienes bajando.
- * - Si entras subiendo: no anima (y se ve normal).
- * - Si ya animó una vez: nunca más vuelve a animar.
+ * Gate:
+ * - ✅ revealed: se activa 1 vez cuando entra al viewport (en cualquier dirección).
+ * - ✅ shouldAnimate: solo true si entras BAJANDO (para animar).
+ *
+ * Fix mobile:
+ * - threshold más bajo + rootMargin menos agresivo => no se queda oculto.
  */
 function useEnterDownOnce<T extends Element>(options?: IntersectionObserverInit) {
   const ref = React.useRef<T | null>(null);
+
   const [runKey, setRunKey] = React.useState(0);
+  const [revealed, setRevealed] = React.useState(false);
   const [shouldAnimate, setShouldAnimate] = React.useState(false);
 
   const lastY = React.useRef(0);
   const wasIntersecting = React.useRef(false);
-  const hasPlayed = React.useRef(false);
+  const hasRevealed = React.useRef(false);
 
   React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
     lastY.current = window.scrollY;
 
     const el = ref.current;
@@ -46,32 +53,44 @@ function useEnterDownOnce<T extends Element>(options?: IntersectionObserverInit)
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (hasPlayed.current) return;
+        if (hasRevealed.current) return;
 
         const y = window.scrollY;
-        const scrollingDown = y > lastY.current;
+        // ✅ “>=” evita el caso scroll igual (primer callback) en algunos móviles
+        const scrollingDown = y >= lastY.current;
 
         const isIntersecting = Boolean(entry?.isIntersecting);
         const entering = isIntersecting && !wasIntersecting.current;
 
-        if (entering && scrollingDown) {
-          hasPlayed.current = true;
-          setShouldAnimate(true);
-          setRunKey((k) => k + 1);
+        if (entering) {
+          hasRevealed.current = true;
+          setRevealed(true);
+
+          if (scrollingDown) {
+            setShouldAnimate(true);
+            setRunKey((k) => k + 1);
+          } else {
+            setShouldAnimate(false);
+          }
+
           io.disconnect();
         }
 
         wasIntersecting.current = isIntersecting;
         lastY.current = y;
       },
-      { threshold: 0.35, rootMargin: "0px 0px -12% 0px", ...options },
+      {
+        threshold: 0.12, // ✅ antes 0.35 (en mobile podía tardar mucho y quedaba oculto)
+        rootMargin: "0px 0px -6% 0px", // ✅ menos agresivo
+        ...options,
+      },
     );
 
     io.observe(el);
     return () => io.disconnect();
   }, [options]);
 
-  return { ref, runKey, shouldAnimate } as const;
+  return { ref, runKey, revealed, shouldAnimate } as const;
 }
 
 type TextTag = "span" | "h2" | "h3" | "p";
@@ -79,12 +98,14 @@ type TextTag = "span" | "h2" | "h3" | "p";
 function DistortLetters({
   text,
   className,
+  revealed,
   play,
   as = "span",
   ariaLabel,
 }: {
   text: string;
   className?: string;
+  revealed: boolean;
   play: boolean;
   as?: TextTag;
   ariaLabel?: string;
@@ -104,14 +125,19 @@ function DistortLetters({
   }, []);
 
   React.useEffect(() => {
+    if (!revealed) {
+      controls.set("hidden");
+      return;
+    }
     if (play) controls.start("show");
     else controls.set("show");
-  }, [play, controls]);
+  }, [revealed, play, controls]);
 
   const words = React.useMemo(() => text.split(/\s+/).filter(Boolean), [text]);
 
   const containerVariants: Variants = React.useMemo(
     () => ({
+      hidden: {},
       show: {
         transition: play
           ? { staggerChildren: params.stagger, delayChildren: 0.03 }
@@ -176,42 +202,14 @@ function DistortLetters({
     "aria-label": ariaLabel ?? text,
     style: commonStyle,
     children: rendered,
+    initial: "hidden" as const,
+    animate: controls,
   };
 
-  if (as === "h2") {
-    return (
-      <motion.h2
-        {...baseProps}
-        initial={play ? "hidden" : false}
-        animate={play ? controls : "show"}
-      />
-    );
-  }
-  if (as === "h3") {
-    return (
-      <motion.h3
-        {...baseProps}
-        initial={play ? "hidden" : false}
-        animate={play ? controls : "show"}
-      />
-    );
-  }
-  if (as === "p") {
-    return (
-      <motion.p
-        {...baseProps}
-        initial={play ? "hidden" : false}
-        animate={play ? controls : "show"}
-      />
-    );
-  }
-  return (
-    <motion.span
-      {...baseProps}
-      initial={play ? "hidden" : false}
-      animate={play ? controls : "show"}
-    />
-  );
+  if (as === "h2") return <motion.h2 {...baseProps} />;
+  if (as === "h3") return <motion.h3 {...baseProps} />;
+  if (as === "p") return <motion.p {...baseProps} />;
+  return <motion.span {...baseProps} />;
 }
 
 export default function Capabilities({ header, items }: CapabilitiesProps) {
@@ -221,7 +219,6 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
   const raf = React.useRef<number | null>(null);
   const lastPoint = React.useRef<Point | null>(null);
 
-  // Imágenes desde JSON (fallback a /01.webp...)
   const images = React.useMemo(() => {
     return items.map((it, i) => {
       const fromContent = it.image?.src?.trim();
@@ -256,7 +253,7 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
     };
   }, []);
 
-  const { ref: sectionRef, runKey, shouldAnimate } =
+  const { ref: sectionRef, runKey, revealed, shouldAnimate } =
     useEnterDownOnce<HTMLElement>();
 
   const baseY = readCssVarNumber("--cap-reveal-y", 10);
@@ -264,15 +261,11 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
   const baseBlur = readCssVarNumber("--cap-reveal-blur", 10);
   const baseStagger = readCssVarNumber("--cap-reveal-stagger", 0.014);
 
-  // ✅ Helpers: asegura point incluso si NO se mueve el mouse dentro del <ol>
-  const setPointFromMouseEvent = React.useCallback(
-    (e: React.MouseEvent) => {
-      const next = { x: e.clientX, y: e.clientY };
-      lastPoint.current = next;
-      setPoint(next);
-    },
-    [],
-  );
+  const setPointFromMouseEvent = React.useCallback((e: React.MouseEvent) => {
+    const next = { x: e.clientX, y: e.clientY };
+    lastPoint.current = next;
+    setPoint(next);
+  }, []);
 
   const setPointFromElementCenter = React.useCallback((el: HTMLElement) => {
     const r = el.getBoundingClientRect();
@@ -281,18 +274,36 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
     setPoint(next);
   }, []);
 
+  const hiddenStyle = React.useMemo(
+    () => ({ opacity: 0, y: baseY, filter: `blur(${baseBlur}px)` }),
+    [baseBlur, baseY],
+  );
+
+  const shownStyle = React.useMemo(
+    () => ({
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+    }),
+    [],
+  );
+
+  // ✅ En mobile: si todavía no se reveló, no “rompas” el layout (solo ocultar visualmente)
+  const notRevealedClass = !revealed ? "pointer-events-none select-none" : "";
+
   return (
     <section id="capabilities" className="bg-surface text-text" ref={sectionRef}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div
-          className="grid grid-cols-1 gap-y-8 md:grid-cols-12 md:gap-x-10 lg:gap-x-12"
+          className={`grid grid-cols-1 gap-y-8 md:grid-cols-12 md:gap-x-10 lg:gap-x-12 ${notRevealedClass}`}
           aria-labelledby="capabilities-heading"
         >
           <DistortLetters
             key={`headline-${runKey}`}
             as="h2"
             text={header.headline}
+            revealed={revealed}
             play={shouldAnimate}
             ariaLabel={header.headline}
             className="md:col-span-7 lg:col-span-7 text-5xl sm:text-7xl lg:text-8xl font-semibold tracking-tight leading-none"
@@ -301,28 +312,15 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
           <motion.p
             key={`aside-${runKey}`}
             className="md:col-span-5 lg:col-span-5 md:self-center lg:mt-2 text-left text-sm sm:text-base leading-relaxed text-text-muted max-w-prose"
-            initial={
-              shouldAnimate
-                ? { opacity: 0, y: baseY, filter: `blur(${baseBlur}px)` }
-                : false
-            }
-            animate={
-              shouldAnimate
-                ? {
-                    opacity: 1,
-                    y: 0,
-                    filter: "blur(0px)",
-                    transition: {
-                      duration: baseDuration,
-                      ease: [0.22, 1, 0.36, 1],
-                    },
-                  }
-                : {
-                    opacity: 1,
-                    y: 0,
-                    filter: "blur(0px)",
-                    transition: { duration: 0 },
-                  }
+            initial="hidden"
+            variants={{ hidden: hiddenStyle, show: shownStyle }}
+            animate={!revealed ? "hidden" : "show"}
+            transition={
+              !revealed
+                ? { duration: 0 }
+                : shouldAnimate
+                  ? { duration: baseDuration, ease: [0.22, 1, 0.36, 1] }
+                  : { duration: 0 }
             }
             style={{
               willChange: "transform, opacity, filter",
@@ -335,7 +333,6 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
 
         {/* List + Hover preview */}
         <div className="relative">
-          {/* ✅ Desktop hover preview (forzado ON para evitar falsos negativos de MQ en Windows/trackpad) */}
           <HoverPreview
             enabled={true}
             activeIndex={hoveredIndex}
@@ -347,7 +344,7 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
           />
 
           <ol
-            className="group mt-16 md:mt-28 mb-16"
+            className={`group mt-16 md:mt-28 mb-16 ${notRevealedClass}`}
             onMouseMove={onListMouseMove}
             onMouseLeave={onListMouseLeave}
           >
@@ -361,16 +358,13 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                   tabIndex={0}
                   onMouseEnter={(e) => {
                     setHoveredIndex((prev) => (prev === idx ? prev : idx));
-                    // ✅ clave: setear point al entrar, aunque NO se mueva el mouse
                     setPointFromMouseEvent(e);
                   }}
                   onMouseMove={(e) => {
-                    // ✅ mantiene fluidez aunque el cursor esté dentro del <li> sin disparar el <ol>
                     if (hoveredIndex === idx) setPointFromMouseEvent(e);
                   }}
                   onFocus={(e) => {
                     setHoveredIndex((prev) => (prev === idx ? prev : idx));
-                    // ✅ teclado: posiciona preview en el centro del ítem
                     setPointFromElementCenter(e.currentTarget);
                   }}
                   onBlur={() => {
@@ -386,7 +380,7 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                   ].join(" ")}
                   aria-current={hoveredIndex === idx ? "true" : undefined}
                 >
-                  {/* ✅ Mobile: Título -> Imagen (sin borde, 8px radius) -> Contenido */}
+                  {/* Mobile */}
                   <div className="md:hidden space-y-6">
                     <div className="flex items-baseline gap-4">
                       <span className="font-mono tabular-nums text-sm text-text-muted">
@@ -397,6 +391,7 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                         key={`title-m-${idx}-${runKey}`}
                         as="h3"
                         text={item.title}
+                        revealed={revealed}
                         play={shouldAnimate}
                         ariaLabel={item.title}
                         className="text-2xl font-semibold leading-tight"
@@ -418,7 +413,6 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                             style={{ objectFit: "cover" }}
                           />
 
-                          {/* overlay suave (sin borde) */}
                           <div
                             aria-hidden="true"
                             className="pointer-events-none absolute inset-0"
@@ -435,29 +429,19 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                     <motion.p
                       key={`desc-m-${idx}-${runKey}`}
                       className="text-left text-sm text-text-muted leading-relaxed"
-                      initial={
-                        shouldAnimate
-                          ? { opacity: 0, y: baseY, filter: `blur(${baseBlur}px)` }
-                          : false
-                      }
-                      animate={
-                        shouldAnimate
-                          ? {
-                              opacity: 1,
-                              y: 0,
-                              filter: "blur(0px)",
-                              transition: {
+                      initial="hidden"
+                      variants={{ hidden: hiddenStyle, show: shownStyle }}
+                      animate={!revealed ? "hidden" : "show"}
+                      transition={
+                        !revealed
+                          ? { duration: 0 }
+                          : shouldAnimate
+                            ? {
                                 duration: baseDuration,
                                 delay: 0.06 + idx * baseStagger,
                                 ease: [0.22, 1, 0.36, 1],
-                              },
-                            }
-                          : {
-                              opacity: 1,
-                              y: 0,
-                              filter: "blur(0px)",
-                              transition: { duration: 0 },
-                            }
+                              }
+                            : { duration: 0 }
                       }
                       style={{
                         willChange: "transform, opacity, filter",
@@ -468,7 +452,7 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                     </motion.p>
                   </div>
 
-                  {/* Desktop layout (igual que antes) */}
+                  {/* Desktop */}
                   <div className="hidden md:grid grid-cols-1 gap-y-4 md:grid-cols-12 md:items-start md:gap-x-10 lg:gap-x-12">
                     <div className="md:col-span-7 lg:col-span-7">
                       <div className="flex items-baseline gap-6">
@@ -480,6 +464,7 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                           key={`title-${idx}-${runKey}`}
                           as="h3"
                           text={item.title}
+                          revealed={revealed}
                           play={shouldAnimate}
                           ariaLabel={item.title}
                           className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight"
@@ -491,29 +476,19 @@ export default function Capabilities({ header, items }: CapabilitiesProps) {
                       <motion.p
                         key={`desc-${idx}-${runKey}`}
                         className="text-left text-sm sm:text-base text-text-muted"
-                        initial={
-                          shouldAnimate
-                            ? { opacity: 0, y: baseY, filter: `blur(${baseBlur}px)` }
-                            : false
-                        }
-                        animate={
-                          shouldAnimate
-                            ? {
-                                opacity: 1,
-                                y: 0,
-                                filter: "blur(0px)",
-                                transition: {
+                        initial="hidden"
+                        variants={{ hidden: hiddenStyle, show: shownStyle }}
+                        animate={!revealed ? "hidden" : "show"}
+                        transition={
+                          !revealed
+                            ? { duration: 0 }
+                            : shouldAnimate
+                              ? {
                                   duration: baseDuration,
                                   delay: 0.06 + idx * baseStagger,
                                   ease: [0.22, 1, 0.36, 1],
-                                },
-                              }
-                            : {
-                                opacity: 1,
-                                y: 0,
-                                filter: "blur(0px)",
-                                transition: { duration: 0 },
-                              }
+                                }
+                              : { duration: 0 }
                         }
                         style={{
                           willChange: "transform, opacity, filter",

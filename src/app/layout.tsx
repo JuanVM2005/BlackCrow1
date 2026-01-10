@@ -16,7 +16,6 @@ const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
-  // Manrope es variable: no hace falta indicar weights individuales
 });
 
 const rethinkSans = Rethink_Sans({
@@ -29,27 +28,29 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: site.seo.defaultTitle,
   description: site.seo.defaultDescription,
-  applicationName: site.name,
+
+  // ❌ Quitamos applicationName para evitar señales innecesarias de "app"
+  // applicationName: site.name,
+
   openGraph: {
     title: site.seo.defaultTitle,
     description: site.seo.defaultDescription,
     url: site.url,
     siteName: site.name,
-    images: [site.ogImage], // resuelto a absoluto vía metadataBase
+    images: [site.ogImage],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: site.seo.defaultTitle,
     description: site.seo.defaultDescription,
-    images: [site.ogImage], // resuelto a absoluto vía metadataBase
+    images: [site.ogImage],
   },
   formatDetection: { telephone: false, address: false, email: false },
   icons: {
     icon: "/icon.png",
     apple: "/apple-icon.png",
   },
-  // manifest lo manejas en src/app/manifest.ts
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -57,7 +58,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" suppressHydrationWarning>
       <body
         className={`${manrope.variable} ${rethinkSans.variable} antialiased min-h-dvh`}
-        // Forzamos que cualquier uso de --font-mono también sea Manrope (una sola fuente monospace)
         style={{ ["--font-mono" as any]: "var(--font-sans)" } as CSSProperties}
       >
         {/* Skip link */}
@@ -90,14 +90,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           offsetBottom={0}
           autoHide={false}
           idleDelay={900}
-          thumbFixedPx={120} // ← alto fijo del thumb (ajusta a gusto)
+          thumbFixedPx={120}
           ariaLabel="Barra de desplazamiento"
         />
 
-        {/* ✅ Vercel Analytics (tráfico/rutas) */}
         <Analytics />
-
-        {/* ✅ Speed Insights (Web Vitals reales) */}
         <SpeedInsights />
       </body>
     </html>

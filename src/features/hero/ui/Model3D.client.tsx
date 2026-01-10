@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, useGLTF } from "@react-three/drei";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
+import { useHeroReady } from "@/hooks/useHeroReady";
 
 /* ===== Props ===== */
 type Props = {
@@ -15,7 +16,7 @@ type Props = {
   className?: string;
   /** Contenedor externo cuyos eventos (mouse/touch) usará el Canvas */
   eventSource?: React.RefObject<HTMLElement>;
-  /** Si es false, apagamos FX pesados (nebulosa, humo) cuando el hero ya no está visible */
+  /** Si es false, apagamos FX pesados (nebulosa, humo…) cuando el hero ya no está visible */
   effectsActive?: boolean;
   /** ✅ Si es false, pausamos el render loop del Canvas (0 consumo de frames) */
   renderActive?: boolean;
@@ -122,7 +123,6 @@ function buildLayerGroup(baseScene: THREE.Object3D, material: THREE.ShaderMateri
     mesh.quaternion.copy(sourceMesh.quaternion);
     mesh.scale.copy(sourceMesh.scale);
 
-    // ✅ capas FX sin sombras
     mesh.castShadow = false;
     mesh.receiveShadow = false;
 
@@ -163,7 +163,6 @@ function RigMouseYaw({
  * - No usa pointer capture
  * - No usa preventDefault
  * - touchAction: pan-y (permite scroll vertical)
- * - Igual rota con gesto horizontal, pero deja bajar/seguir scrolleando.
  */
 function RigMobileDragYaw({
   rig,
@@ -198,7 +197,6 @@ function RigMobileDragYaw({
     const el = eventEl ?? (gl.domElement as unknown as HTMLElement);
     if (!el) return;
 
-    // ✅ permite scroll vertical mientras el dedo se mueve
     prevTouchAction.current = el.style.touchAction || "";
     el.style.touchAction = "pan-y";
 
@@ -1056,18 +1054,19 @@ function CrowLayers({
   viewport: ViewportMode;
   effectsActive: boolean;
   lowPower: boolean;
-  onLoaded?: () => void;
+  onLoaded: () => void;
 }) {
   const gltf = useGLTF(src);
   const baseScene = gltf.scene as THREE.Object3D;
 
+  // ✅ preload (no-hook)
   useEffect(() => {
     useGLTF.preload(src);
   }, [src]);
 
-  // ✅ avisamos al parent cuando el GLB ya está listo
+  // ✅ avisamos cuando el GLB ya está listo
   useEffect(() => {
-    onLoaded?.();
+    onLoaded();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gltf]);
 
@@ -1138,7 +1137,7 @@ function LoadingOverlay({
           pointer-events: none;
           overflow: hidden;
           opacity: 1;
-          transition: opacity 420ms ease;
+          transition: opacity 520ms ease;
           background: transparent;
         }
         .bc-heroOverlay.isHidden {
@@ -1210,33 +1209,66 @@ export default function Model3D({
   effectsActive = true,
   renderActive = true,
 }: Props) {
+  const heroReady = useHeroReady();
+
   const viewport = useViewportMode();
   const isMobile = viewport === "mobile";
   const reduce = usePrefersReducedMotion();
 
   const initialSupportsWebGL = useMemo(() => canUseWebGL(), []);
   const [hasWebGLError, setHasWebGLError] = useState(false);
-
   const [lowPower, setLowPower] = useState(false);
 
-  // ✅ loading state del GLB (para fade del poster)
+  // ✅ loading state del GLB
   const [modelReady, setModelReady] = useState(false);
-  const [overlayVisible, setOverlayVisible] = useState(!!poster);
 
-  useEffect(() => {
-    // si cambia el src, volvemos a mostrar overlay
-    setModelReady(false);
-    setOverlayVisible(true);
-  }, [src]);
+  // ✅ overlay en 2 fases: fade + unmount (para que NO “se note” luego)
+  const [overlayMounted, setOverlayMounted] = useState(!!poster);
+  const [overlayFading, setOverlayFading] = useState(false);
 
-  // cuando el modelo está listo, ocultamos overlay con fade
-  useEffect(() => {
-    if (!modelReady) return;
-    const t = window.setTimeout(() => setOverlayVisible(false), 460);
-    return () => window.clearTimeout(t);
-  }, [modelReady]);
+  // ✅ evita setReady repetido
+  const readySentRef = useRef(false);
 
   const shouldRenderCanvas = initialSupportsWebGL && !hasWebGLError;
+
+  // Reset completo al cambiar src/poster
+  useEffect(() => {
+    setModelReady(false);
+    setOverlayMounted(!!poster);
+    setOverlayFading(false);
+    readySentRef.current = false;
+  }, [src, poster]);
+
+  // ✅ Cuando el modelo está listo: crossfade + setReady
+  useEffect(() => {
+    if (!modelReady) return;
+
+    // inicia fade del overlay
+    if (overlayMounted) setOverlayFading(true);
+
+    const t = window.setTimeout(() => {
+      setOverlayMounted(false);
+    }, 520);
+
+    if (!readySentRef.current) {
+      readySentRef.current = true;
+      heroReady.setReady(true);
+    }
+
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelReady]);
+
+  // ✅ si NO podemos renderizar canvas (sin WebGL / error) pero hay poster, igual marcamos “ready”
+  useEffect(() => {
+    if (!shouldRenderCanvas) {
+      if (!readySentRef.current) {
+        readySentRef.current = true;
+        heroReady.setReady(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldRenderCanvas]);
 
   const dpr = useMemo<[number, number]>(() => {
     if (lowPower) return [0.7, 1.0];
@@ -1246,7 +1278,6 @@ export default function Model3D({
   }, [isMobile, viewport, lowPower]);
 
   const rig = useRef<{ rotY: number }>({ rotY: 0 });
-
   const runtimeActive = renderActive && !reduce;
 
   return (
@@ -1259,94 +1290,105 @@ export default function Model3D({
         <img src={poster} alt={alt} className="block w-full h-full object-cover" loading="lazy" />
       )}
 
-      {/* ✅ Overlay (poster + shimmer) mientras el GLB carga */}
-      {shouldRenderCanvas && (
-        <LoadingOverlay visible={overlayVisible} poster={poster} alt={alt} />
+      {/* ✅ Overlay (poster + shimmer) mientras el GLB carga (y se desmonta al final) */}
+      {shouldRenderCanvas && overlayMounted && (
+        <LoadingOverlay visible={!overlayFading} poster={poster} alt={alt} />
       )}
 
       {shouldRenderCanvas && (
-        <Canvas
-          camera={{ position: [-6.6, 2.2, 6.9], fov: 28 }}
-          shadows={false}
-          dpr={dpr}
-          eventSource={eventSource?.current ?? undefined}
-          eventPrefix="client"
-          frameloop={renderActive ? "always" : "never"}
-          gl={{
-            antialias: !isMobile && !lowPower,
-            alpha: true,
-            powerPreference: "high-performance",
-            toneMapping: THREE.ACESFilmicToneMapping,
-          }}
-          onCreated={({ gl, scene }) => {
-            gl.setClearColor("#000000", 0);
-            gl.outputColorSpace = THREE.SRGBColorSpace;
-
-            gl.shadowMap.enabled = false;
-
-            gl.toneMappingExposure = isMobile ? 1.15 : 1.0;
-
-            scene.fog = new THREE.FogExp2(0x050214, lowPower ? 0.016 : isMobile ? 0.014 : 0.02);
+        <div
+          className="absolute inset-0"
+          style={{
+            opacity: modelReady ? 1 : 0,
+            transition: reduce ? "none" : "opacity 520ms ease",
           }}
         >
-          <WakeOnActive active={renderActive} />
-
-          <WebGLContextGuard
-            onLost={() => {
-              setLowPower(true);
-              setHasWebGLError(true);
+          <Canvas
+            camera={{ position: [-6.6, 2.2, 6.9], fov: 28 }}
+            shadows={false}
+            dpr={dpr}
+            eventSource={eventSource?.current ?? undefined}
+            eventPrefix="client"
+            frameloop={renderActive ? "always" : "never"}
+            gl={{
+              antialias: !isMobile && !lowPower,
+              alpha: true,
+              powerPreference: "high-performance",
+              toneMapping: THREE.ACESFilmicToneMapping,
             }}
-            onRestored={() => {
-              setHasWebGLError(false);
-              setLowPower(true);
+            onCreated={({ gl, scene }) => {
+              gl.setClearColor("#000000", 0);
+              gl.outputColorSpace = THREE.SRGBColorSpace;
+
+              gl.shadowMap.enabled = false;
+              gl.toneMappingExposure = isMobile ? 1.15 : 1.0;
+
+              scene.fog = new THREE.FogExp2(
+                0x050214,
+                lowPower ? 0.016 : isMobile ? 0.014 : 0.02,
+              );
             }}
-          />
+          >
+            <WakeOnActive active={renderActive} />
 
-          <PerformanceBudget
-            enabled={runtimeActive && effectsActive && !lowPower}
-            onLowPower={() => setLowPower(true)}
-          />
-
-          <RigMouseYaw rig={rig} viewport={viewport} maxYaw={0.16} lerp={0.08} />
-
-          {/* ✅ Mobile drag que NO bloquea scroll */}
-          <RigMobileDragYaw
-            rig={rig}
-            enabled={isMobile && renderActive}
-            eventEl={eventSource?.current ?? null}
-            maxYaw={0.62}
-            sensitivity={2.4}
-            lerp={0.18}
-          />
-
-          <Suspense fallback={null}>
-            <ambientLight intensity={isMobile ? 0.42 : 0.25} />
-            {isMobile && <hemisphereLight intensity={0.55} />}
-
-            <directionalLight position={[3, 5, 2]} intensity={isMobile ? 1.05 : 0.9} />
-
-            {effectsActive && !lowPower && (
-              <pointLight position={[0, 2, 7]} intensity={isMobile ? 0.24 : 0.36} color="#fb3797" />
-            )}
-
-            <CrowLayers
-              src={src}
-              rig={rig}
-              viewport={viewport}
-              effectsActive={effectsActive && runtimeActive}
-              lowPower={lowPower || reduce || !renderActive}
-              onLoaded={() => {
-                if (!modelReady) setModelReady(true);
+            <WebGLContextGuard
+              onLost={() => {
+                setLowPower(true);
+                setHasWebGLError(true);
+              }}
+              onRestored={() => {
+                setHasWebGLError(false);
+                setLowPower(true);
               }}
             />
 
-            <Environment
-              preset="dawn"
-              resolution={lowPower ? 32 : isMobile ? 32 : viewport === "tablet" ? 64 : 96}
-              background={false}
+            <PerformanceBudget
+              enabled={runtimeActive && effectsActive && !lowPower}
+              onLowPower={() => setLowPower(true)}
             />
-          </Suspense>
-        </Canvas>
+
+            <RigMouseYaw rig={rig} viewport={viewport} maxYaw={0.16} lerp={0.08} />
+
+            {/* ✅ Mobile drag que NO bloquea scroll */}
+            <RigMobileDragYaw
+              rig={rig}
+              enabled={isMobile && renderActive}
+              eventEl={eventSource?.current ?? null}
+              maxYaw={0.62}
+              sensitivity={2.4}
+              lerp={0.18}
+            />
+
+            <Suspense fallback={null}>
+              <ambientLight intensity={isMobile ? 0.42 : 0.25} />
+              {isMobile && <hemisphereLight intensity={0.55} />}
+
+              <directionalLight position={[3, 5, 2]} intensity={isMobile ? 1.05 : 0.9} />
+
+              {effectsActive && !lowPower && (
+                <pointLight position={[0, 2, 7]} intensity={isMobile ? 0.24 : 0.36} color="#fb3797" />
+              )}
+
+              <CrowLayers
+                src={src}
+                rig={rig}
+                viewport={viewport}
+                effectsActive={effectsActive && runtimeActive}
+                lowPower={lowPower || reduce || !renderActive}
+                onLoaded={() => {
+                  // ✅ se dispara cuando useGLTF ya resolvió el GLB
+                  setModelReady(true);
+                }}
+              />
+
+              <Environment
+                preset="dawn"
+                resolution={lowPower ? 32 : isMobile ? 32 : viewport === "tablet" ? 64 : 96}
+                background={false}
+              />
+            </Suspense>
+          </Canvas>
+        </div>
       )}
     </div>
   );

@@ -19,7 +19,11 @@
     },
     {
       "title": "Responsivo",
-      "body": "Compatible y optimizado para móviles."
+      "body": "Compatible y optimizado para móviles.",
+      "image": {
+        "src": "/images/value-grid/mobil.png",
+        "alt": "Vista móvil del sitio web"
+      }
     },
     {
       "title": "Optimización total",

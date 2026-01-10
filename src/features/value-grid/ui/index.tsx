@@ -14,14 +14,12 @@ import {
 import type { ValueGridProps } from "../content/value-grid.mapper";
 import { IoLanguageSharp } from "react-icons/io5";
 
-// ✅ Anchor destino (Card 3)
-import { usePhoneAnchors } from "./usePhoneAnchors";
-
 /**
- * ValueGrid (v31)
- * - Card 3 (penúltimo): reemplaza imagen por SLOT (anchor) para iPhone 3D (PhoneOverlay).
- * - El anchor se registra SOLO en el layout activo (mobile o desktop) para evitar rects 0.
- * - Card 4 (último): mantiene imagen centrada.
+ * ValueGrid (clean)
+ * - ✅ Sin iPhone 3D
+ * - ✅ Card 3 muestra mobil.png desde JSON
+ * - ✅ Contenedor de imagen SIN borde y SIN fondo
+ * - ✅ Hover SOLO en Card 3: giro leve eje Z del PNG (respeta reduced motion)
  */
 export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
   const [idea, uiux, responsive, optimization] = cards;
@@ -30,10 +28,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
   const prefersReducedMotion = useReducedMotion();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
-  // ✅ Anchor destino del iPhone
-  const { targetRef } = usePhoneAnchors();
-
-  // Detecta mobile
+  // Detecta mobile (solo para el heading animado)
   const [isMobile, setIsMobile] = React.useState(false);
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -42,23 +37,6 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
     mq.addEventListener?.("change", update);
     return () => mq.removeEventListener?.("change", update);
   }, []);
-
-  // ✅ Registramos el target SOLO en el layout visible
-  const targetRefMobile = React.useCallback(
-    (el: HTMLElement | null) => {
-      if (!isMobile) return;
-      targetRef(el);
-    },
-    [isMobile, targetRef],
-  );
-
-  const targetRefDesktop = React.useCallback(
-    (el: HTMLElement | null) => {
-      if (isMobile) return;
-      targetRef(el);
-    },
-    [isMobile, targetRef],
-  );
 
   // Scroll
   const { scrollYProgress } = useScroll({
@@ -139,6 +117,22 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
     };
   }, [EASE, prefersReducedMotion]);
 
+  // Hover ONLY para el PNG de la card 3 (se “engancha” al hover del Card por variants)
+  const phoneHoverVariants = React.useMemo<Variants>(() => {
+    if (prefersReducedMotion) {
+      return { rest: { rotateZ: 0, y: 0, scale: 1 }, hover: { rotateZ: 0 } };
+    }
+    return {
+      rest: { rotateZ: 0, y: 0, scale: 1 },
+      hover: {
+        rotateZ: -4,
+        y: -2,
+        scale: 1.1,
+        transition: { duration: 0.25, ease: EASE },
+      },
+    };
+  }, [EASE, prefersReducedMotion]);
+
   const viewport = React.useMemo(() => ({ once: true, amount: 0.34 }), []);
 
   return (
@@ -146,7 +140,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
       <div
         ref={containerRef}
         className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 md:py-10"
-        >
+      >
         <header className="mb-4 md:mb-6 sticky top-10 md:top-12 z-0">
           {isMobile ? (
             <motion.h2
@@ -250,7 +244,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
               </Card>
             </motion.div>
 
-            {/* 3 (SLOT 3D) */}
+            {/* 3 (MOBIL IMAGE) */}
             <motion.div variants={gridItemVariants} className="aspect-square">
               <Card
                 ariaLabel={responsive.title}
@@ -260,13 +254,23 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                 <div className="flex h-full flex-col px-2">
                   <h3 className={h3Square}>{responsive.title}</h3>
 
-                  {/* ✅ Slot destino para el iPhone 3D (PhoneOverlay) */}
+                  {/* ✅ SIN borde / SIN fondo */}
                   <div className="relative mt-2 w-full flex-1">
-                    <div
-                      ref={targetRefMobile}
-                      aria-hidden="true"
-                      className="absolute inset-0"
-                    />
+                    {responsive.image ? (
+                      <motion.div
+                        variants={phoneHoverVariants}
+                        className="relative h-full w-full origin-center"
+                      >
+                        <Image
+                          src={responsive.image.src}
+                          alt={responsive.image.alt ?? ""}
+                          fill
+                          sizes="(min-width:640px) 92vw, 92vw"
+                          className="object-contain"
+                          priority={false}
+                        />
+                      </motion.div>
+                    ) : null}
                   </div>
 
                   {responsive.body ? (
@@ -328,10 +332,7 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
           >
             {/* === FILA SUPERIOR === */}
             <div className="grid gap-3 md:gap-4 md:grid-cols-[minmax(80px,0.7fr)_minmax(280px,1.6fr)] lg:grid-cols-[minmax(100px,0.7fr)_minmax(400px,1.7fr)]">
-              <motion.div
-                variants={gridItemVariants}
-                className="md:aspect-square"
-              >
+              <motion.div variants={gridItemVariants} className="md:aspect-square">
                 <Card
                   ariaLabel={idea.title}
                   className="h-full"
@@ -398,17 +399,24 @@ export default function ValueGrid({ titleLines, cards }: ValueGridProps) {
                       </div>
                     </div>
 
-                    {/* ✅ Slot destino para el iPhone 3D (PhoneOverlay) */}
+                    {/* ✅ SIN borde / SIN fondo + hover rotateZ */}
                     <div className="relative grid place-items-center">
-                      <div
-                        className="relative w-[92%] md:w-[88%] lg:w-[96%] aspect-4/3"
-                        aria-hidden="true"
-                      >
-                        <div
-                          ref={targetRefDesktop}
-                          aria-hidden="true"
-                          className="absolute inset-0"
-                        />
+                      <div className="relative w-[92%] md:w-[88%] lg:w-[96%] aspect-4/3">
+                        {responsive.image ? (
+                          <motion.div
+                            variants={phoneHoverVariants}
+                            className="relative h-full w-full origin-center"
+                          >
+                            <Image
+                              src={responsive.image.src}
+                              alt={responsive.image.alt ?? ""}
+                              fill
+                              sizes="(min-width:1024px) 42vw, (min-width:768px) 44vw, 92vw"
+                              className="object-contain"
+                              priority={false}
+                            />
+                          </motion.div>
+                        ) : null}
                       </div>
                     </div>
                   </div>

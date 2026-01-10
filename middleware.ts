@@ -8,11 +8,10 @@ import type { NextRequest } from "next/server";
  * - /en/contacto -> /en/contact
  * - Sin prefijo de locale → redirige a HOME del preferido (/es|/en).
  *
- * ✅ OG/Twitter ahora son 100% estáticos (public/og/*),
  */
 
 const LOCALES = new Set(["es", "en"]);
-const DEFAULT_LOCALE = "es";
+const DEFAULT_LOCALE: "es" = "es";
 
 /** Determina si la ruta debe saltarse el middleware */
 function shouldSkip(pathname: string): boolean {
@@ -25,7 +24,7 @@ function shouldSkip(pathname: string): boolean {
     return true;
   }
 
-  // Assets estáticos (incluye /og/default.png, favicons, imágenes, etc.)
+  // Assets estáticos (incluye /og/*.png, favicons, imágenes, etc.)
   if (/\.[a-z0-9]+$/i.test(pathname)) return true;
 
   // Rutas técnicas explícitas
@@ -33,8 +32,6 @@ function shouldSkip(pathname: string): boolean {
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     pathname === "/favicon.ico" ||
-    pathname === "/manifest.json" ||
-    pathname === "/manifest.webmanifest" ||
     pathname === "/icon.png" ||
     pathname === "/apple-icon.png"
   ) {
@@ -83,7 +80,7 @@ export function middleware(req: NextRequest) {
     const localeVariantMatch = /^([A-Za-z]{2})(-[A-Za-z]{2})?$/.test(firstRaw);
     if (!LOCALES.has(firstLower) && localeVariantMatch) {
       const base = firstLower.split("-")[0];
-      const normalized = LOCALES.has(base) ? base : DEFAULT_LOCALE;
+      const normalized = (LOCALES.has(base) ? base : DEFAULT_LOCALE) as "es" | "en";
 
       segs[0] = normalized;
       url.pathname = "/" + segs.join("/");
@@ -96,7 +93,7 @@ export function middleware(req: NextRequest) {
 
     // 2c) Ya trae locale válido → aplicar slugs semánticos
     if (LOCALES.has(firstLower)) {
-      const locale = firstLower;
+      const locale = firstLower as "es" | "en";
       const slug = segs[1];
 
       // ❌ /es/contact → /es/contacto

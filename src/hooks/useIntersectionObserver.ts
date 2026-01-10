@@ -1,6 +1,7 @@
-'use client';
+// src/hooks/useIntersectionObserver.ts
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Options = {
   /** Elemento raíz para el IO (default: viewport) */
@@ -11,7 +12,10 @@ type Options = {
   threshold?: number | number[];
   /** Si es true, una vez visible deja de observar (default: true) */
   once?: boolean;
-  /** Estado inicial para SSR o navegadores sin IO (default: true para no “romper” la UI) */
+  /**
+   * Estado inicial para SSR o navegadores sin IO.
+   * ✅ Default ahora es false para evitar “aparece antes de tiempo”.
+   */
   initialInView?: boolean;
 };
 
@@ -36,8 +40,8 @@ export function useIntersectionObserver<T extends Element = Element>(
     rootMargin,
     threshold,
     once = true,
-    initialInView = true,
-  }: Options = {}
+    initialInView = false, // ✅ antes era true
+  }: Options = {},
 ): UseIOResult<T> {
   const [inView, setInView] = useState<boolean>(initialInView);
   const [entry, setEntry] = useState<IntersectionObserverEntry | null>(null);
@@ -56,49 +60,53 @@ export function useIntersectionObserver<T extends Element = Element>(
     observerRef.current = null;
   }, []);
 
-  const ref = useCallback((node: T | null) => {
-    // Detach de anterior
-    cleanup();
-    nodeRef.current = node;
+  const ref = useCallback(
+    (node: T | null) => {
+      // Detach de anterior
+      cleanup();
+      nodeRef.current = node;
 
-    if (!node) return;
+      if (!node) return;
 
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
-      // Sin soporte: deja visible por defecto para no bloquear contenido
-      setInView(true);
-      setEntry(null);
-      return;
-    }
+      if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+        // Sin soporte: deja visible por defecto para no bloquear contenido
+        setInView(true);
+        setEntry(null);
+        return;
+      }
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const first = entries[0];
-        setEntry(first);
-        const isVisible = first.isIntersecting && first.intersectionRatio > 0;
-        setInView(isVisible);
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          const first = entries[0];
+          setEntry(first);
 
-        if (isVisible && once && observerRef.current && nodeRef.current) {
-          try {
-            observerRef.current.unobserve(nodeRef.current);
-          } catch {
-            // noop
+          const isVisible =
+            Boolean(first?.isIntersecting) && (first?.intersectionRatio ?? 0) > 0;
+
+          setInView(isVisible);
+
+          if (isVisible && once && observerRef.current && nodeRef.current) {
+            try {
+              observerRef.current.unobserve(nodeRef.current);
+            } catch {
+              // noop
+            }
           }
-        }
-      },
-      { root: root ?? null, rootMargin, threshold }
-    );
+        },
+        { root: root ?? null, rootMargin, threshold },
+      );
 
-    try {
-      observerRef.current.observe(node);
-    } catch {
-      // Si falla por algún motivo, no rompemos la UI
-      setInView(true);
-    }
-  }, [cleanup, root, rootMargin, threshold, once]);
+      try {
+        observerRef.current.observe(node);
+      } catch {
+        // Si falla por algún motivo, no rompemos la UI
+        setInView(true);
+      }
+    },
+    [cleanup, root, rootMargin, threshold, once],
+  );
 
-  useEffect(() => {
-    return () => cleanup();
-  }, [cleanup]);
+  useEffect(() => cleanup, [cleanup]);
 
   return { ref, inView, entry };
 }

@@ -23,10 +23,6 @@ import HomeSectionJump from "@/features/landing/ui/HomeSectionJump.client";
 import { normalizeLocale } from "@/i18n/locales";
 import Footer from "@/layout/Footer";
 
-// ✅ Phone anchors + overlay (client)
-import { PhoneAnchorsProvider } from "@/features/value-grid/ui/usePhoneAnchors";
-import PhoneOverlay from "@/features/value-grid/ui/PhoneOverlay.client";
-
 type Locale = "es" | "en";
 type Params = { params: Promise<{ locale: Locale }> };
 
@@ -122,10 +118,7 @@ export default async function Page({ params }: Params) {
   }
 
   return (
-    <PhoneAnchorsProvider>
-      {/* ✅ Overlay global (sin props: el model vive dentro del componente) */}
-      <PhoneOverlay />
-
+    <>
       {/* Posicionamiento automático en hero / pricing cuando venimos desde otra ruta */}
       <HomeSectionJump />
 
@@ -149,6 +142,6 @@ export default async function Page({ params }: Params) {
 
       {/* Footer claro solo para la landing */}
       <Footer locale={locale} surface="base" />
-    </PhoneAnchorsProvider>
+    </>
   );
 }
